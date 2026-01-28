@@ -5,11 +5,11 @@ import lombok.experimental.UtilityClass;
 import net.potatocloud.api.group.ServiceGroup;
 import net.potatocloud.api.group.impl.ServiceGroupImpl;
 import net.potatocloud.api.property.Property;
+import net.potatocloud.node.utils.YamlUtils;
 import org.simpleyaml.configuration.file.YamlFile;
 
+import java.io.File;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 
 @UtilityClass
 public class ServiceGroupStorage {
@@ -50,22 +50,9 @@ public class ServiceGroupStorage {
     }
 
     @SneakyThrows
-    public ServiceGroup loadFromFile(Path groupFile) {
-        final YamlFile config = new YamlFile(groupFile.toFile());
+    public ServiceGroup loadFromFile(File file) {
+        final YamlFile config = new YamlFile(file);
         config.load();
-
-        final Map<String, Property<?>> properties = new HashMap<>();
-        if (config.isSet("properties")) {
-            for (String key : config.getConfigurationSection("properties").getKeys(false)) {
-                final Object value = config.get("properties." + key + ".value");
-                Object defaultValue = config.get("properties." + key + ".default");
-                if (defaultValue == null) {
-                    defaultValue = value;
-                }
-
-                properties.put(key, Property.of(key, defaultValue, value));
-            }
-        }
 
         return new ServiceGroupImpl(
                 config.getString("name"),
@@ -82,7 +69,7 @@ public class ServiceGroupStorage {
                 config.getInt("start-percentage"),
                 config.getString("java-command"),
                 config.getStringList("jvm-flags"),
-                properties
+                YamlUtils.getProperties(config)
         );
     }
 }

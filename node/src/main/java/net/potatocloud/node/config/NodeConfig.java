@@ -27,6 +27,7 @@ public class NodeConfig {
     private String platformsFolder = "platforms";
     private String logsFolder = "logs";
     private String dataFolder = "data";
+    private String backupsFolder = "backups";
 
     private String nodeHost = "127.0.0.1";
     private int nodePort = 16000;
@@ -60,6 +61,7 @@ public class NodeConfig {
         platformsFolder = yaml.getString("folders.platforms", platformsFolder);
         logsFolder = yaml.getString("folders.logs", logsFolder);
         dataFolder = yaml.getString("folders.data", dataFolder);
+        backupsFolder = yaml.getString("folders.backups", backupsFolder);
 
         nodeHost = yaml.getString("node.host", nodeHost);
         nodePort = yaml.getInt("node.port", nodePort);
@@ -93,6 +95,7 @@ public class NodeConfig {
         yaml.set("folders.platforms", platformsFolder);
         yaml.set("folders.logs", logsFolder);
         yaml.set("folders.data", dataFolder);
+        yaml.set("folders.backups", backupsFolder);
 
         addSpacer(yaml, "node");
 

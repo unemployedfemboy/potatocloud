@@ -11,6 +11,7 @@ import net.potatocloud.api.property.PropertyHolder;
 import net.potatocloud.api.service.Service;
 import net.potatocloud.api.utils.Version;
 import net.potatocloud.core.event.ServerEventManager;
+import net.potatocloud.core.migration.MigrationManager;
 import net.potatocloud.core.networking.NetworkServer;
 import net.potatocloud.core.networking.netty.server.NettyNetworkServer;
 import net.potatocloud.core.networking.packet.PacketManager;
@@ -21,6 +22,7 @@ import net.potatocloud.node.console.Console;
 import net.potatocloud.node.console.ExceptionMessageHandler;
 import net.potatocloud.node.console.Logger;
 import net.potatocloud.node.group.ServiceGroupManagerImpl;
+import net.potatocloud.node.migration.Migration_1_4_3;
 import net.potatocloud.node.platform.DownloadManager;
 import net.potatocloud.node.platform.PlatformManagerImpl;
 import net.potatocloud.node.platform.cache.CacheManager;
@@ -47,6 +49,7 @@ public class Node extends CloudAPI {
 
     private final long startupTime;
     private final NodeConfig config;
+    private final MigrationManager migrationManager;
     private final CommandManager commandManager;
     private final Console console;
     private final Logger logger;
@@ -82,6 +85,11 @@ public class Node extends CloudAPI {
 
         previousVersion = VersionFile.read();
 
+        migrationManager = new MigrationManager(previousVersion);
+        new Migration_1_4_3(Path.of(config.getGroupsFolder()), Path.of(config.getBackupsFolder()), migrationManager);
+
+        migrationManager.migrate();
+
         VersionFile.write(CloudAPI.VERSION);
 
         commandManager = new CommandManager();
@@ -114,7 +122,7 @@ public class Node extends CloudAPI {
         propertiesHolder = new NodePropertiesHolder(server);
         playerManager = new CloudPlayerManagerImpl(server);
         templateManager = new TemplateManager(logger, Path.of(config.getTemplatesFolder()));
-        groupManager = new ServiceGroupManagerImpl(Path.of(config.getGroupsFolder()), server);
+        groupManager = new ServiceGroupManagerImpl(Path.of(config.getGroupsFolder()), server, logger);
         ((ServiceGroupManagerImpl) groupManager).loadGroups();
 
         if (!groupManager.getAllServiceGroups().isEmpty()) {
