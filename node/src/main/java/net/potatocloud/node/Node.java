@@ -49,25 +49,31 @@ public class Node extends CloudAPI {
 
     private final long startupTime;
     private final NodeConfig config;
-    private final MigrationManager migrationManager;
-    private final CommandManager commandManager;
-    private final Console console;
+
     private final Logger logger;
+    private final Console console;
     private final ScreenManager screenManager;
-    private final SetupManager setupManager;
-    private final UpdateChecker updateChecker;
+    private final CommandManager commandManager;
+
+    private final MigrationManager migrationManager;
     private final PacketManager packetManager;
     private final NetworkServer server;
     private final EventManager eventManager;
+
     private final NodePropertiesHolder propertiesHolder;
     private final CloudPlayerManager playerManager;
     private final TemplateManager templateManager;
     private final ServiceGroupManager groupManager;
+
     private final PlatformManagerImpl platformManager;
     private final DownloadManager downloadManager;
     private final CacheManager cacheManager;
+
     private final ServiceManagerImpl serviceManager;
     private final ServiceStartQueue serviceStartQueue;
+
+    private final SetupManager setupManager;
+    private final UpdateChecker updateChecker;
 
     private final Version previousVersion;
     private boolean ready = false;
@@ -75,32 +81,52 @@ public class Node extends CloudAPI {
 
     public Node(long startupTime) {
         this.startupTime = startupTime;
-
         config = new NodeConfig();
+        previousVersion = VersionFile.read();
+        migrationManager = new MigrationManager(previousVersion);
 
+        commandManager = new CommandManager();
+        console = new Console(commandManager, this);
+        logger = new Logger(console, Path.of(config.getLogsFolder()));
+
+        final Screen nodeScreen = new Screen(Screen.NODE_SCREEN);
+        screenManager = new ScreenManager(console, logger);
+        screenManager.addScreen(nodeScreen);
+        screenManager.setCurrentScreen(nodeScreen);
+
+        setupManager = new SetupManager();
+
+        updateChecker = new UpdateChecker(logger);
+
+        packetManager = new PacketManager();
+        server = new NettyNetworkServer(packetManager);
+
+        eventManager = new ServerEventManager(server);
+        propertiesHolder = new NodePropertiesHolder(server);
+        playerManager = new CloudPlayerManagerImpl(server);
+        templateManager = new TemplateManager(logger, Path.of(config.getTemplatesFolder()));
+        groupManager = new ServiceGroupManagerImpl(Path.of(config.getGroupsFolder()), server, logger);
+
+        platformManager = new PlatformManagerImpl(logger, server);
+        downloadManager = new DownloadManager(Path.of(config.getPlatformsFolder()), logger);
+        cacheManager = new CacheManager(logger);
+
+        serviceManager = new ServiceManagerImpl(
+                config, logger, server, eventManager, groupManager, screenManager, templateManager, platformManager, downloadManager, cacheManager, console
+        );
+        serviceStartQueue = new ServiceStartQueue(groupManager, serviceManager);
+    }
+
+    public void start() {
         if (!NetworkUtils.isPortFree(config.getNodePort())) {
             System.err.println("The configured node port is already in use. Is another instance of potatocloud already running on this port?");
             System.exit(0);
         }
 
-        previousVersion = VersionFile.read();
-
-        migrationManager = new MigrationManager(previousVersion);
-        new Migration_1_4_3(Path.of(config.getGroupsFolder()), Path.of(config.getBackupsFolder()), migrationManager);
-
+        registerMigrations();
         migrationManager.migrate();
 
         VersionFile.write(CloudAPI.VERSION);
-
-        commandManager = new CommandManager();
-        console = new Console(commandManager, this);
-        logger = new Logger(console, Path.of(config.getLogsFolder()));
-        new ExceptionMessageHandler(logger);
-
-        screenManager = new ScreenManager(console, logger);
-        final Screen nodeScreen = new Screen(Screen.NODE_SCREEN);
-        screenManager.addScreen(nodeScreen);
-        screenManager.setCurrentScreen(nodeScreen);
 
         console.start();
 
@@ -108,21 +134,11 @@ public class Node extends CloudAPI {
             logger.warn("Your hardware is low, you may experience performance issues. Recommended: 4 cores, 4GB RAM");
         }
 
-        setupManager = new SetupManager();
-
-        updateChecker = new UpdateChecker(logger);
         updateChecker.checkForUpdates();
 
-        packetManager = new PacketManager();
-        server = new NettyNetworkServer(packetManager);
         server.start(config.getNodeHost(), config.getNodePort());
         logger.info("Network server started using &aNetty &7on &a" + config.getNodeHost() + "&8:&a" + config.getNodePort());
 
-        eventManager = new ServerEventManager(server);
-        propertiesHolder = new NodePropertiesHolder(server);
-        playerManager = new CloudPlayerManagerImpl(server);
-        templateManager = new TemplateManager(logger, Path.of(config.getTemplatesFolder()));
-        groupManager = new ServiceGroupManagerImpl(Path.of(config.getGroupsFolder()), server, logger);
         ((ServiceGroupManagerImpl) groupManager).loadGroups();
 
         if (!groupManager.getAllServiceGroups().isEmpty()) {
@@ -134,22 +150,17 @@ public class Node extends CloudAPI {
             }
         }
 
-        platformManager = new PlatformManagerImpl(logger, server);
-        downloadManager = new DownloadManager(Path.of(config.getPlatformsFolder()), logger);
-        cacheManager = new CacheManager(logger);
-
         ServiceDefaultFiles.copyDefaultFiles(logger, config, getClass().getClassLoader());
-        serviceManager = new ServiceManagerImpl(
-                config, logger, server, eventManager, groupManager, screenManager, templateManager, platformManager, downloadManager, cacheManager, console
-        );
-        serviceStartQueue = new ServiceStartQueue(groupManager, serviceManager);
 
         registerCommands();
 
         logger.info("Startup completed in &a" + (System.currentTimeMillis() - startupTime) + "ms &8| &7Use &8'&ahelp&8' &7to see available commands");
-
         serviceStartQueue.start();
         ready = true;
+    }
+
+    private void registerMigrations() {
+        new Migration_1_4_3(Path.of(config.getGroupsFolder()), Path.of(config.getBackupsFolder()), migrationManager);
     }
 
     private void registerCommands() {

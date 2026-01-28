@@ -28,6 +28,7 @@ public class Logger {
     public Logger(Console console, Path logsFolder) {
         this.console = console;
         this.logsFolder = logsFolder;
+        new ExceptionMessageHandler(this);
 
         final File latestLogFile = logsFolder.resolve(LATEST_LOG_FILENAME).toFile();
         if (latestLogFile.exists()) {
