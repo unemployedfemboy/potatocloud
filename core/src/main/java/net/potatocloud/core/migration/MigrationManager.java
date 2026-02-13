@@ -1,7 +1,7 @@
 package net.potatocloud.core.migration;
 
 import lombok.RequiredArgsConstructor;
-import net.potatocloud.api.utils.Version;
+import net.potatocloud.api.utils.version.Version;
 
 import java.util.ArrayList;
 import java.util.Comparator;

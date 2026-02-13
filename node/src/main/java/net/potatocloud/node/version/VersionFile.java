@@ -1,7 +1,7 @@
 package net.potatocloud.node.version;
 
 import lombok.SneakyThrows;
-import net.potatocloud.api.utils.Version;
+import net.potatocloud.api.utils.version.Version;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.file.PathUtils;
 

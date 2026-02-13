@@ -8,7 +8,7 @@ import net.potatocloud.api.player.CloudPlayerManager;
 import net.potatocloud.api.property.PropertyHolder;
 import net.potatocloud.api.service.Service;
 import net.potatocloud.api.service.ServiceManager;
-import net.potatocloud.api.utils.Version;
+import net.potatocloud.api.utils.version.Version;
 
 @Getter
 public abstract class CloudAPI {

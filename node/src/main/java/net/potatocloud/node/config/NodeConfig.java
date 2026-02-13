@@ -73,11 +73,11 @@ public class NodeConfig {
     private void createFile(File configFile) {
         try (InputStream stream = getClass().getResourceAsStream(CONFIG_FILE_NAME)) {
             if (stream == null) {
-                throw new IllegalStateException(CONFIG_FILE_NAME + "not found in resources!");
+                throw new IllegalStateException(CONFIG_FILE_NAME + " not found in resources!");
             }
             FileUtils.copyInputStreamToFile(stream, configFile);
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to copy" + CONFIG_FILE_NAME + "from resources!", e);
+            throw new IllegalStateException("Failed to copy " + CONFIG_FILE_NAME + " from resources!", e);
         }
     }
 }

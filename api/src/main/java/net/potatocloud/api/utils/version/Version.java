@@ -1,4 +1,4 @@
-package net.potatocloud.api.utils;
+package net.potatocloud.api.utils.version;
 
 import lombok.Getter;
 

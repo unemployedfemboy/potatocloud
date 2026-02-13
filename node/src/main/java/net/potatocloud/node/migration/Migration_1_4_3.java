@@ -2,7 +2,7 @@ package net.potatocloud.node.migration;
 
 import lombok.SneakyThrows;
 import net.potatocloud.api.property.Property;
-import net.potatocloud.api.utils.Version;
+import net.potatocloud.api.utils.version.Version;
 import net.potatocloud.core.migration.Migration;
 import net.potatocloud.core.migration.MigrationManager;
 import net.potatocloud.node.utils.YamlUtils;
@@ -12,22 +12,20 @@ import org.simpleyaml.configuration.file.YamlFile;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class Migration_1_4_3 extends Migration {
 
-    private final Path groupsFolder;
-    private final Path backupsFolder;
+    private final Path groupsDirectory;
+    private final Path backupsDirectory;
 
-    public Migration_1_4_3(Path groupsFolder, Path backupsFolder, MigrationManager manager) {
+    public Migration_1_4_3(Path groupsDirectory, Path backupsDirectory, MigrationManager manager) {
         super("Migration 1.4.3", Version.of(1, 4, 2), Version.of(1, 4, 3));
-        this.groupsFolder = groupsFolder;
-        this.backupsFolder = backupsFolder;
+        this.groupsDirectory = groupsDirectory;
+        this.backupsDirectory = backupsDirectory;
+
         manager.registerMigration(this);
     }
 
@@ -39,25 +37,18 @@ public class Migration_1_4_3 extends Migration {
 
     @SneakyThrows
     private void backupGroupFiles() {
-        final Path groupBackupFolder = backupsFolder.resolve("groups");
-        if (!Files.exists(groupBackupFolder)) {
-            Files.createDirectories(groupBackupFolder);
-        }
+        final Path backupsDirectory = createBackupsDirectory(this.backupsDirectory, "groups");
 
-        final String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
-        final Path currentBackupFolder = groupBackupFolder.resolve(timestamp);
-        Files.createDirectories(currentBackupFolder);
-
-        final Collection<File> files = FileUtils.listFiles(groupsFolder.toFile(), new String[]{"yml"}, false);
+        final Collection<File> files = FileUtils.listFiles(groupsDirectory.toFile(), new String[]{"yml"}, false);
         for (File file : files) {
-            final Path target = currentBackupFolder.resolve(file.getName());
+            final Path target = backupsDirectory.resolve(file.getName());
             Files.copy(file.toPath(), target);
         }
     }
 
     @SneakyThrows
     private void migrateGroupFiles() {
-        final Collection<File> files = FileUtils.listFiles(groupsFolder.toFile(), new String[]{"yml"}, false);
+        final Collection<File> files = FileUtils.listFiles(groupsDirectory.toFile(), new String[]{"yml"}, false);
 
         for (File file : files) {
             final YamlFile config = new YamlFile(file);
