@@ -34,7 +34,6 @@ folders:
   platforms: platforms
   logs: logs
   data: data
-  backups: backups
 
 node:
   host: 127.0.0.1

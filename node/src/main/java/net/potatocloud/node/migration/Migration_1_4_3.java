@@ -1,6 +1,5 @@
 package net.potatocloud.node.migration;
 
-import lombok.SneakyThrows;
 import net.potatocloud.api.property.Property;
 import net.potatocloud.api.utils.version.Version;
 import net.potatocloud.core.migration.Migration;
@@ -10,6 +9,7 @@ import org.apache.commons.io.FileUtils;
 import org.simpleyaml.configuration.file.YamlFile;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -19,25 +19,26 @@ import java.util.Map;
 public class Migration_1_4_3 extends Migration {
 
     private final Path groupsDirectory;
-    private final Path backupsDirectory;
 
-    public Migration_1_4_3(Path groupsDirectory, Path backupsDirectory, MigrationManager manager) {
+    public Migration_1_4_3(Path groupsDirectory, MigrationManager manager) {
         super("Migration 1.4.3", Version.of(1, 4, 2), Version.of(1, 4, 3));
         this.groupsDirectory = groupsDirectory;
-        this.backupsDirectory = backupsDirectory;
 
         manager.registerMigration(this);
     }
 
     @Override
     public void execute() {
-        backupGroupFiles();
-        migrateGroupFiles();
+        try {
+            backupGroupFiles();
+            migrateGroupFiles();
+        } catch (IOException e) {
+            System.err.println("Failed to migrate from version 1.4.2 to version 1.4.3");
+        }
     }
 
-    @SneakyThrows
-    private void backupGroupFiles() {
-        final Path backupsDirectory = createBackupsDirectory(this.backupsDirectory, "groups");
+    private void backupGroupFiles() throws IOException {
+        final Path backupsDirectory = createBackupsDirectory("groups");
 
         final Collection<File> files = FileUtils.listFiles(groupsDirectory.toFile(), new String[]{"yml"}, false);
         for (File file : files) {
@@ -46,8 +47,7 @@ public class Migration_1_4_3 extends Migration {
         }
     }
 
-    @SneakyThrows
-    private void migrateGroupFiles() {
+    private void migrateGroupFiles() throws IOException {
         final Collection<File> files = FileUtils.listFiles(groupsDirectory.toFile(), new String[]{"yml"}, false);
 
         for (File file : files) {

@@ -13,15 +13,17 @@ import java.time.format.DateTimeFormatter;
 @RequiredArgsConstructor
 public abstract class Migration {
 
+    private static final Path BACKUPS_DIRECTORY = Path.of("backups");
+
     private final String name;
     private final Version from;
     private final Version to;
 
     public abstract void execute();
 
-    protected Path createBackupsDirectory(Path path, String subDirectoryName) {
+    protected Path createBackupsDirectory(String subDirectoryName) {
         try {
-            final Path subDirectory = path.resolve(subDirectoryName);
+            final Path subDirectory = BACKUPS_DIRECTORY.resolve(subDirectoryName);
             if (!Files.exists(subDirectory)) {
                 Files.createDirectories(subDirectory);
             }

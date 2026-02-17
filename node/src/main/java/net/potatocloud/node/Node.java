@@ -160,7 +160,7 @@ public class Node extends CloudAPI {
     }
 
     private void registerMigrations() {
-        new Migration_1_4_3(Path.of(config.getGroupsFolder()), Path.of(config.getBackupsFolder()), migrationManager);
+        new Migration_1_4_3(Path.of(config.getGroupsFolder()), migrationManager);
     }
 
     private void registerCommands() {
