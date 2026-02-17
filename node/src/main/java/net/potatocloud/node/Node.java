@@ -80,6 +80,7 @@ public class Node extends CloudAPI {
 
     public Node(long startupTime) {
         this.startupTime = startupTime;
+
         config = new NodeConfig();
 
         if (!NetworkUtils.isPortFree(config.getNodePort())) {
@@ -89,6 +90,10 @@ public class Node extends CloudAPI {
 
         previousVersion = VersionFile.read();
         migrationManager = new MigrationManager(previousVersion);
+        registerMigrations();
+        migrationManager.migrate();
+
+        VersionFile.write(CloudAPI.VERSION);
 
         commandManager = new CommandManager();
         console = new Console(commandManager, this);
@@ -99,46 +104,27 @@ public class Node extends CloudAPI {
         screenManager.addScreen(nodeScreen);
         screenManager.setCurrentScreen(nodeScreen);
 
-        setupManager = new SetupManager();
-
-        updateChecker = new UpdateChecker(logger);
-
-        packetManager = new PacketManager();
-        server = new NettyNetworkServer(packetManager);
-
-        eventManager = new ServerEventManager(server);
-        propertiesHolder = new NodePropertiesHolder(server);
-        playerManager = new CloudPlayerManagerImpl(server);
-        templateManager = new TemplateManager(logger, Path.of(config.getTemplatesFolder()));
-        groupManager = new ServiceGroupManagerImpl(Path.of(config.getGroupsFolder()), server, logger);
-
-        platformManager = new PlatformManagerImpl(logger, server);
-        downloadManager = new DownloadManager(Path.of(config.getPlatformsFolder()), logger);
-        cacheManager = new CacheManager(logger);
-
-        serviceManager = new ServiceManagerImpl(
-                config, logger, server, eventManager, groupManager, screenManager, templateManager, platformManager, downloadManager, cacheManager, console
-        );
-        serviceStartQueue = new ServiceStartQueue(groupManager, serviceManager);
-    }
-
-    public void start() {
-        registerMigrations();
-        migrationManager.migrate();
-
-        VersionFile.write(CloudAPI.VERSION);
-
         console.start();
 
         if (HardwareUtils.isLowHardware()) {
             logger.warn("Your hardware is low, you may experience performance issues. Recommended: 4 cores, 4GB RAM");
         }
 
+        setupManager = new SetupManager();
+
+        updateChecker = new UpdateChecker(logger);
         updateChecker.checkForUpdates();
 
+        packetManager = new PacketManager();
+        server = new NettyNetworkServer(packetManager);
         server.start(config.getNodeHost(), config.getNodePort());
         logger.info("Network server started using &aNetty &7on &a" + config.getNodeHost() + "&8:&a" + config.getNodePort());
 
+        eventManager = new ServerEventManager(server);
+        propertiesHolder = new NodePropertiesHolder(server);
+        playerManager = new CloudPlayerManagerImpl(server);
+        templateManager = new TemplateManager(logger, Path.of(config.getTemplatesFolder()));
+        groupManager = new ServiceGroupManagerImpl(Path.of(config.getGroupsFolder()), server, logger);
         ((ServiceGroupManagerImpl) groupManager).loadGroups();
 
         if (!groupManager.getAllServiceGroups().isEmpty()) {
@@ -150,11 +136,20 @@ public class Node extends CloudAPI {
             }
         }
 
+        platformManager = new PlatformManagerImpl(logger, server);
+        downloadManager = new DownloadManager(Path.of(config.getPlatformsFolder()), logger);
+        cacheManager = new CacheManager(logger);
+
         ServiceDefaultFiles.copyDefaultFiles(logger, config, getClass().getClassLoader());
+        serviceManager = new ServiceManagerImpl(
+                config, logger, server, eventManager, groupManager, screenManager, templateManager, platformManager, downloadManager, cacheManager, console
+        );
+        serviceStartQueue = new ServiceStartQueue(groupManager, serviceManager);
 
         registerCommands();
 
         logger.info("Startup completed in &a" + (System.currentTimeMillis() - startupTime) + "ms &8| &7Use &8'&ahelp&8' &7to see available commands");
+
         serviceStartQueue.start();
         ready = true;
     }
