@@ -9,7 +9,9 @@ import net.potatocloud.api.group.ServiceGroupManager;
 import net.potatocloud.api.player.CloudPlayerManager;
 import net.potatocloud.api.property.PropertyHolder;
 import net.potatocloud.api.service.Service;
+import net.potatocloud.api.utils.version.Version;
 import net.potatocloud.core.event.ServerEventManager;
+import net.potatocloud.core.migration.MigrationManager;
 import net.potatocloud.core.networking.NetworkServer;
 import net.potatocloud.core.networking.netty.server.NettyNetworkServer;
 import net.potatocloud.core.networking.packet.PacketManager;
@@ -17,9 +19,9 @@ import net.potatocloud.node.command.CommandManager;
 import net.potatocloud.node.command.commands.*;
 import net.potatocloud.node.config.NodeConfig;
 import net.potatocloud.node.console.Console;
-import net.potatocloud.node.console.ExceptionMessageHandler;
 import net.potatocloud.node.console.Logger;
 import net.potatocloud.node.group.ServiceGroupManagerImpl;
+import net.potatocloud.node.migration.Migration_1_4_3;
 import net.potatocloud.node.platform.DownloadManager;
 import net.potatocloud.node.platform.PlatformManagerImpl;
 import net.potatocloud.node.platform.cache.CacheManager;
@@ -46,26 +48,33 @@ public class Node extends CloudAPI {
 
     private final long startupTime;
     private final NodeConfig config;
-    private final CommandManager commandManager;
-    private final Console console;
+
     private final Logger logger;
+    private final Console console;
     private final ScreenManager screenManager;
-    private final SetupManager setupManager;
-    private final UpdateChecker updateChecker;
+    private final CommandManager commandManager;
+
+    private final MigrationManager migrationManager;
     private final PacketManager packetManager;
     private final NetworkServer server;
     private final EventManager eventManager;
+
     private final NodePropertiesHolder propertiesHolder;
     private final CloudPlayerManager playerManager;
     private final TemplateManager templateManager;
     private final ServiceGroupManager groupManager;
+
     private final PlatformManagerImpl platformManager;
     private final DownloadManager downloadManager;
     private final CacheManager cacheManager;
+
     private final ServiceManagerImpl serviceManager;
     private final ServiceStartQueue serviceStartQueue;
 
-    private final String previousVersion;
+    private final SetupManager setupManager;
+    private final UpdateChecker updateChecker;
+
+    private final Version previousVersion;
     private boolean ready = false;
     private boolean isStopping;
 
@@ -79,16 +88,19 @@ public class Node extends CloudAPI {
             System.exit(0);
         }
 
-        previousVersion = VersionFile.getVersion();
-        VersionFile.create();
+        previousVersion = VersionFile.read();
+        migrationManager = new MigrationManager(previousVersion);
+        registerMigrations();
+        migrationManager.migrate();
+
+        VersionFile.write(CloudAPI.VERSION);
 
         commandManager = new CommandManager();
         console = new Console(commandManager, this);
         logger = new Logger(console, Path.of(config.getLogsFolder()));
-        new ExceptionMessageHandler(logger);
 
-        screenManager = new ScreenManager(console, logger);
         final Screen nodeScreen = new Screen(Screen.NODE_SCREEN);
+        screenManager = new ScreenManager(console, logger);
         screenManager.addScreen(nodeScreen);
         screenManager.setCurrentScreen(nodeScreen);
 
@@ -112,7 +124,7 @@ public class Node extends CloudAPI {
         propertiesHolder = new NodePropertiesHolder(server);
         playerManager = new CloudPlayerManagerImpl(server);
         templateManager = new TemplateManager(logger, Path.of(config.getTemplatesFolder()));
-        groupManager = new ServiceGroupManagerImpl(Path.of(config.getGroupsFolder()), server);
+        groupManager = new ServiceGroupManagerImpl(Path.of(config.getGroupsFolder()), server, logger);
         ((ServiceGroupManagerImpl) groupManager).loadGroups();
 
         if (!groupManager.getAllServiceGroups().isEmpty()) {
@@ -140,6 +152,10 @@ public class Node extends CloudAPI {
 
         serviceStartQueue.start();
         ready = true;
+    }
+
+    private void registerMigrations() {
+        new Migration_1_4_3(Path.of(config.getGroupsFolder()), migrationManager);
     }
 
     private void registerCommands() {

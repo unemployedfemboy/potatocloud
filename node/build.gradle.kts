@@ -15,10 +15,6 @@ dependencies {
     implementation(project(":api"))
     implementation(project(":connector"))
 
-    implementation(libs.simpleyaml) {
-        exclude(group = "org.yaml", module = "snakeyaml")
-    }
-
     implementation(libs.commons.codec)
     implementation(libs.commons.io)
     implementation(libs.gson)
@@ -27,6 +23,10 @@ dependencies {
     implementation(libs.slf4j.nop)
     implementation(libs.lombok)
     annotationProcessor(libs.lombok)
+
+    implementation(libs.simpleyaml) {
+        exclude(group = "org.yaml", module = "snakeyaml")
+    }
 
     compileOnly(project(":platform-plugins:spigot"))
     compileOnly(project(":platform-plugins:spigot-legacy"))

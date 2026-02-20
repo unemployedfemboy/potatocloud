@@ -33,7 +33,22 @@ public class ServiceGroupImpl implements ServiceGroup {
     private List<String> customJvmFlags;
     private final Map<String, Property<?>> propertyMap;
 
-    public ServiceGroupImpl(String name, String platformName, String platformVersionName, int minOnlineCount, int maxOnlineCount, int maxPlayers, int maxMemory, boolean fallback, boolean isStatic, int startPriority, int startPercentage, String javaCommand, List<String> customJvmFlags, Map<String, Property<?>> propertyMap) {
+    public ServiceGroupImpl(
+            String name,
+            String platformName,
+            String platformVersionName,
+            int minOnlineCount,
+            int maxOnlineCount,
+            int maxPlayers,
+            int maxMemory,
+            boolean fallback,
+            boolean isStatic,
+            int startPriority,
+            int startPercentage,
+            String javaCommand,
+            List<String> customJvmFlags,
+            Map<String, Property<?>> propertyMap
+    ) {
         this.name = name;
         this.platformName = platformName;
         this.platformVersionName = platformVersionName;
@@ -54,20 +69,9 @@ public class ServiceGroupImpl implements ServiceGroup {
         addServiceTemplate(name);
 
         final Platform platform = getPlatform();
-        if (platform == null) {
-            return;
+        if (platform != null) {
+            addServiceTemplate(platform.isProxy() ? "every_proxy" : "every_service");
         }
-
-        if (platform.isProxy()) {
-            addServiceTemplate("every_proxy");
-        } else {
-            addServiceTemplate("every_service");
-        }
-    }
-
-    @Override
-    public String getPropertyHolderName() {
-        return getName();
     }
 
     @Override
@@ -102,5 +106,10 @@ public class ServiceGroupImpl implements ServiceGroup {
             return;
         }
         serviceTemplates.remove(template);
+    }
+
+    @Override
+    public String getPropertyHolderName() {
+        return getName();
     }
 }
