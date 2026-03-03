@@ -38,7 +38,15 @@ public class CloudPlayerManagerImpl implements CloudPlayerManager {
         }
         registerPlayerLocal(player);
 
-        client.send(new CloudPlayerAddPacket(player.getUsername(), player.getUniqueId(), player.getConnectedProxyName(), "", player.getPropertyMap()));
+        // The service of the player is null here because the player has just connected to the proxy and has not joined a service yet
+        // The service will be set later by the proxy plugin once the player successfully connects to a service
+        client.send(new CloudPlayerAddPacket(
+                player.getUsername(),
+                player.getUniqueId(),
+                player.getConnectedProxyName(),
+                null,
+                player.getPropertyMap()
+        ));
     }
 
     public void registerPlayerLocal(CloudPlayer player) {
