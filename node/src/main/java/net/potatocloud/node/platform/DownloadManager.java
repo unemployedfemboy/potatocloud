@@ -4,14 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import net.potatocloud.api.platform.Platform;
 import net.potatocloud.api.platform.PlatformVersion;
+import net.potatocloud.core.utils.FileUtils;
 import net.potatocloud.node.Node;
 import net.potatocloud.node.console.Logger;
 import net.potatocloud.node.platform.parser.PaperBuildParser;
 import net.potatocloud.node.platform.parser.PurpurBuildParser;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FileUtils;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.net.URI;
 import java.nio.file.Files;
@@ -21,7 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DownloadManager {
 
-    private final Path platformsFolder;
+    private final Path platformsDirectory;
     private final Logger logger;
 
     private static final List<BuildParser> PARSERS = List.of(new PaperBuildParser("paper"), new PaperBuildParser("velocity"), new PurpurBuildParser());
@@ -33,14 +32,14 @@ public class DownloadManager {
             return;
         }
 
-        if (!Files.exists(platformsFolder)) {
-            Files.createDirectories(platformsFolder);
+        if (!Files.exists(platformsDirectory)) {
+            Files.createDirectories(platformsDirectory);
         }
 
-        final File platformFile = PlatformUtils.getPlatformJarFile(platform, version);
+        final Path platformJarPath = PlatformUtils.getPlatformJarPath(platform, version);
 
         if (version.isLocal()) {
-            if (!platformFile.exists()) {
+            if (Files.notExists(platformJarPath)) {
                 logger.error("Platform &a" + platform.getName() + " &7version &a" + version.getName() + " &7does not exist!");
                 return;
             }
@@ -57,20 +56,20 @@ public class DownloadManager {
             parser.parse(version, platform.getDownloadUrl());
         }
 
-        if (!platformFile.exists()) {
-            download(platform, version, platformFile);
+        if (Files.notExists(platformJarPath)) {
+            download(platform, version, platformJarPath);
             return;
         }
 
         final boolean autoUpdate = Node.getInstance().getConfig().isPlatformAutoUpdate();
-        if (autoUpdate && needsUpdate(version, platformFile)) {
+        if (autoUpdate && needsUpdate(version, platformJarPath)) {
             logger.info("Platform &a" + platform.getName() + " &7is outdated! Downloading update&8...");
-            download(platform, version, platformFile);
+            download(platform, version, platformJarPath);
         }
     }
 
     @SneakyThrows
-    private void download(Platform platform, PlatformVersion version, File platformFile) {
+    private void download(Platform platform, PlatformVersion version, Path platformJarPath) {
         logger.info("&7Downloading platform &a" + platform.getName() + "&7 version &a" + version.getName());
 
         if (version.getDownloadUrl() == null || version.getDownloadUrl().isEmpty()) {
@@ -78,19 +77,19 @@ public class DownloadManager {
             return;
 
         }
-        FileUtils.copyURLToFile(URI.create(version.getDownloadUrl()).toURL(), platformFile, 5000, 5000);
+        FileUtils.downloadFile(URI.create(version.getDownloadUrl()).toURL(), platformJarPath);
         logger.info("&7Finished downloading platform &a" + platform.getName() + "&7 version &a" + version.getName());
     }
 
     @SneakyThrows
-    private boolean needsUpdate(PlatformVersion version, File platformFile) {
+    private boolean needsUpdate(PlatformVersion version, Path platformJarPath) {
         // Check if the platform version file is outdated by comparing its hash with the latest version hash
         final String versionHash = version.getFileHash();
         if (versionHash == null || versionHash.isEmpty()) {
             return false;
         }
 
-        try (FileInputStream stream = new FileInputStream(platformFile)) {
+        try (FileInputStream stream = new FileInputStream(platformJarPath.toFile())) {
             final String currentFileHash = version.getPlatform().getHashType().equals("md5")
                     ? DigestUtils.md5Hex(stream)
                     : DigestUtils.sha256Hex(stream);

@@ -1,14 +1,12 @@
 package net.potatocloud.node.config;
 
 import lombok.Getter;
-import lombok.SneakyThrows;
-import net.potatocloud.node.Node;
-import org.apache.commons.io.FileUtils;
+import net.potatocloud.core.utils.ResourceFileUtils;
 import org.simpleyaml.configuration.file.YamlFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @Getter
 public class NodeConfig {
@@ -37,16 +35,22 @@ public class NodeConfig {
     private final String nodeHost;
     private final int nodePort;
 
-    @SneakyThrows
     public NodeConfig() {
-        final File configFile = new File(CONFIG_FILE_NAME);
+        final Path configPath = Path.of(CONFIG_FILE_NAME);
 
-        if (!configFile.exists()) {
-            createFile(configFile);
+        if (!Files.exists(configPath)) {
+            ResourceFileUtils.copyResourceFile(
+                    CONFIG_FILE_NAME,
+                    configPath
+            );
         }
 
-        final YamlFile config = new YamlFile(configFile);
-        config.load();
+        final YamlFile config = new YamlFile(configPath.toFile());
+        try {
+            config.load();
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read " + CONFIG_FILE_NAME, e);
+        }
 
         prompt = config.getString("console.prompt");
         enableBanner = config.getBoolean("console.enable-banner");
@@ -69,16 +73,5 @@ public class NodeConfig {
 
         nodeHost = config.getString("node.host");
         nodePort = config.getInt("node.port");
-    }
-
-    private void createFile(File configFile) {
-        try (InputStream stream = Node.getInstance().getClass().getClassLoader().getResourceAsStream(CONFIG_FILE_NAME)) {
-            if (stream == null) {
-                throw new IllegalStateException(CONFIG_FILE_NAME + " not found in resources!");
-            }
-            FileUtils.copyInputStreamToFile(stream, configFile);
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to copy " + CONFIG_FILE_NAME + " from resources!", e);
-        }
     }
 }

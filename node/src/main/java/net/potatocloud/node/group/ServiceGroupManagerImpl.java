@@ -1,7 +1,6 @@
 package net.potatocloud.node.group;
 
 import lombok.Getter;
-import lombok.SneakyThrows;
 import net.potatocloud.api.group.ServiceGroup;
 import net.potatocloud.api.group.ServiceGroupManager;
 import net.potatocloud.api.group.impl.ServiceGroupImpl;
@@ -12,15 +11,14 @@ import net.potatocloud.core.networking.packet.packets.group.GroupAddPacket;
 import net.potatocloud.core.networking.packet.packets.group.GroupDeletePacket;
 import net.potatocloud.core.networking.packet.packets.group.GroupUpdatePacket;
 import net.potatocloud.core.networking.packet.packets.group.RequestGroupsPacket;
+import net.potatocloud.core.utils.FileUtils;
 import net.potatocloud.node.Node;
 import net.potatocloud.node.console.Logger;
 import net.potatocloud.node.group.listeners.GroupAddListener;
 import net.potatocloud.node.group.listeners.GroupDeleteListener;
 import net.potatocloud.node.group.listeners.GroupUpdateListener;
 import net.potatocloud.node.group.listeners.RequestGroupsListener;
-import org.apache.commons.io.FileUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,6 +43,8 @@ public class ServiceGroupManagerImpl implements ServiceGroupManager {
         server.on(GroupUpdatePacket.class, new GroupUpdateListener(this, server));
         server.on(GroupAddPacket.class, new GroupAddListener(this, server));
         server.on(GroupDeletePacket.class, new GroupDeleteListener(this, server));
+
+        loadGroups();
     }
 
     @Override
@@ -183,21 +183,16 @@ public class ServiceGroupManagerImpl implements ServiceGroupManager {
         return groups.stream().anyMatch(group -> group != null && group.getName().equalsIgnoreCase(name));
     }
 
-
-    @SneakyThrows
-    public void loadGroups() {
-        if (!Files.exists((groupsPath))) {
+    private void loadGroups() {
+        if (Files.notExists(groupsPath)) {
             return;
         }
 
-        final Collection<File> files = FileUtils.listFiles(groupsPath.toFile(), new String[]{"yml"}, false);
-
-        for (File file : files) {
-            final ServiceGroup group = ServiceGroupStorage.loadFromFile(file);
-            if (group == null) {
-                return;
-            }
-            groups.add(group);
-        }
+        FileUtils.list(groupsPath).stream()
+                .filter(Files::isRegularFile).filter(path -> path.toString().endsWith(".yml"))
+                .map(Path::toFile)
+                .map(ServiceGroupStorage::loadFromFile)
+                .filter(Objects::nonNull)
+                .forEach(groups::add);
     }
 }

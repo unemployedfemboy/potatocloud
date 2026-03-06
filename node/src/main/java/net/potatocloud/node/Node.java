@@ -15,6 +15,7 @@ import net.potatocloud.core.migration.MigrationManager;
 import net.potatocloud.core.networking.NetworkServer;
 import net.potatocloud.core.networking.netty.server.NettyNetworkServer;
 import net.potatocloud.core.networking.packet.PacketManager;
+import net.potatocloud.core.utils.FileUtils;
 import net.potatocloud.node.command.CommandManager;
 import net.potatocloud.node.command.commands.*;
 import net.potatocloud.node.config.NodeConfig;
@@ -39,7 +40,6 @@ import net.potatocloud.node.utils.HardwareUtils;
 import net.potatocloud.node.utils.NetworkUtils;
 import net.potatocloud.node.version.UpdateChecker;
 import net.potatocloud.node.version.VersionFile;
-import org.apache.commons.io.FileUtils;
 
 import java.nio.file.Path;
 
@@ -125,7 +125,6 @@ public class Node extends CloudAPI {
         playerManager = new CloudPlayerManagerImpl(server);
         templateManager = new TemplateManager(logger, Path.of(config.getTemplatesFolder()));
         groupManager = new ServiceGroupManagerImpl(Path.of(config.getGroupsFolder()), server, logger);
-        ((ServiceGroupManagerImpl) groupManager).loadGroups();
 
         if (!groupManager.getAllServiceGroups().isEmpty()) {
             final int groupCount = groupManager.getAllServiceGroups().size();
@@ -140,7 +139,7 @@ public class Node extends CloudAPI {
         downloadManager = new DownloadManager(Path.of(config.getPlatformsFolder()), logger);
         cacheManager = new CacheManager(logger);
 
-        ServiceDefaultFiles.copyDefaultFiles(logger, config, getClass().getClassLoader());
+        ServiceDefaultFiles.copyDefaultFiles(Path.of(config.getDataFolder()));
         serviceManager = new ServiceManagerImpl(
                 config, logger, server, eventManager, groupManager, screenManager, templateManager, platformManager, downloadManager, cacheManager, console
         );
@@ -186,7 +185,7 @@ public class Node extends CloudAPI {
         server.close();
 
         logger.info("Cleaning up temporary files&8...");
-        FileUtils.deleteDirectory(Path.of(config.getTempServicesFolder()).toFile());
+        FileUtils.deleteDirectory(Path.of(config.getTempServicesFolder()));
 
         logger.info("Shutdown complete. Goodbye!");
         console.close();

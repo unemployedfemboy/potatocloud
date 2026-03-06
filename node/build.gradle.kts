@@ -16,7 +16,7 @@ dependencies {
     implementation(project(":connector"))
 
     implementation(libs.commons.codec)
-    implementation(libs.commons.io)
+
     implementation(libs.gson)
     implementation(libs.jline)
     implementation(libs.oshi)

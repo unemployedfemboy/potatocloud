@@ -1,31 +1,34 @@
 package net.potatocloud.node.utils;
 
 import lombok.SneakyThrows;
-import lombok.experimental.UtilityClass;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
-@UtilityClass
-public class PropertiesFileUtils {
+public final class PropertiesFileUtils {
 
-    @SneakyThrows
-    public Properties loadProperties(Path file) {
-        Properties properties = new Properties();
-        if (Files.exists(file)) {
-            try (FileInputStream in = new FileInputStream(file.toFile())) {
-                properties.load(in);
-            }
-        }
-        return properties;
+    private PropertiesFileUtils() {
     }
 
     @SneakyThrows
-    public void saveProperties(Properties properties, Path file) {
-        try (OutputStream out = Files.newOutputStream(file)) {
+    public static Properties loadProperties(Path path) {
+        final Properties properties = new Properties();
+
+        try (FileInputStream in = new FileInputStream(path.toFile())) {
+            properties.load(in);
+            return properties;
+        } catch (FileNotFoundException e) {
+            return null;
+        }
+    }
+
+    @SneakyThrows
+    public static void saveProperties(Properties properties, Path filePath) {
+        try (OutputStream out = Files.newOutputStream(filePath)) {
             properties.store(out, null);
         }
     }

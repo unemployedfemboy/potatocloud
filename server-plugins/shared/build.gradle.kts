@@ -5,6 +5,8 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":core"))
+
     implementation(libs.lombok)
     annotationProcessor(libs.lombok)
     compileOnly(libs.minimessage)

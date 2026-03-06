@@ -2,14 +2,14 @@ package net.potatocloud.node.console;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import net.potatocloud.node.Node;
 import net.potatocloud.node.screen.Screen;
-import org.apache.commons.io.FileUtils;
 
-import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,24 +32,22 @@ public class Logger {
         this.console = console;
         this.logsDirectory = logsDirectory;
 
-        new ExceptionMessageHandler(this);
-
-        final File latestLogFile = logsDirectory.resolve(LATEST_LOG_FILENAME).toFile();
-        if (latestLogFile.exists()) {
-            latestLogFile.delete();
+        if (Files.notExists(logsDirectory)) {
+            try {
+                Files.createDirectories(logsDirectory);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to create logs directory: " + logsDirectory, e);
+            }
         }
-    }
 
-    @Getter
-    @RequiredArgsConstructor
-    public enum Level {
-        INFO("&a"),
-        WARN("&e"),
-        ERROR("&c"),
-        COMMAND("&7");
-
-        private final String colorCode;
-
+        final Path latestLogPath = logsDirectory.resolve(LATEST_LOG_FILENAME);
+        if (Files.exists(latestLogPath)) {
+            try {
+                Files.deleteIfExists(latestLogPath);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to delete " + LATEST_LOG_FILENAME, e);
+            }
+        }
     }
 
     public void info(String message) {
@@ -72,7 +70,6 @@ public class Logger {
         return Collections.unmodifiableList(cachedLogs);
     }
 
-    @SneakyThrows
     private void log(Level level, String message) {
         final Date now = new Date();
         final String formattedTime = TIME_FORMAT.format(now);
@@ -89,11 +86,16 @@ public class Logger {
             coloredMessage = "&8[&7" + formattedTime + " " + level.getColorCode() + level.name() + "&8] &7" + message;
         }
 
-        final File dayLog = logsDirectory.resolve(formattedDate + ".log").toFile();
-        final File latestLog = logsDirectory.resolve(LATEST_LOG_FILENAME).toFile();
+        final Path dayLogPath = logsDirectory.resolve(formattedDate + ".log");
+        final Path latestLogPath = logsDirectory.resolve(LATEST_LOG_FILENAME);
 
-        FileUtils.writeStringToFile(dayLog, uncoloredMessage + System.lineSeparator(), StandardCharsets.UTF_8, true);
-        FileUtils.writeStringToFile(latestLog, uncoloredMessage + System.lineSeparator(), StandardCharsets.UTF_8, true);
+        appendLine(dayLogPath, uncoloredMessage);
+        appendLine(latestLogPath, uncoloredMessage);
+
+        // Make sure the cached logs list wont get too big
+        if (cachedLogs.size() > 1000) {
+            cachedLogs.removeFirst();
+        }
 
         cachedLogs.add(coloredMessage);
 
@@ -105,5 +107,38 @@ public class Logger {
 
     private String removeColorCodes(String input) {
         return COLOR_PATTERN.matcher(input).replaceAll("");
+    }
+
+    private void appendLine(Path path, String line) {
+        if (Files.notExists(path)) {
+            try {
+                Files.createFile(path);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to create log file: " + path, e);
+            }
+        }
+        try {
+            Files.writeString(
+                    path,
+                    line + System.lineSeparator(),
+                    StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.APPEND
+            );
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to write to log file: " + path, e);
+        }
+    }
+
+    @Getter
+    @RequiredArgsConstructor
+    public enum Level {
+        INFO("&a"),
+        WARN("&e"),
+        ERROR("&c"),
+        COMMAND("&7");
+
+        private final String colorCode;
+
     }
 }

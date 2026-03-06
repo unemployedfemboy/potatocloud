@@ -5,14 +5,15 @@ import net.potatocloud.api.platform.Platform;
 import net.potatocloud.api.platform.PlatformVersion;
 import net.potatocloud.api.platform.impl.PlatformImpl;
 import net.potatocloud.api.platform.impl.PlatformVersionImpl;
+import net.potatocloud.core.utils.ResourceFileUtils;
 import net.potatocloud.node.console.Logger;
-import org.apache.commons.io.FileUtils;
 import org.simpleyaml.configuration.ConfigurationSection;
 import org.simpleyaml.configuration.file.YamlFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,23 +21,21 @@ import java.util.Map;
 
 public class PlatformFileHandler {
 
+    private static final String PLATFORMS_FILE_NAME = "platforms.yml";
+
     private final Logger logger;
-    private final File file;
+    private final Path platformsFilePath;
     private final YamlFile config;
 
     public PlatformFileHandler(Logger logger) {
         this.logger = logger;
-        this.file = new File("platforms.yml");
+        this.platformsFilePath = Path.of(PLATFORMS_FILE_NAME);
 
-        // Create platforms.yml if missing
-        if (!file.exists()) {
-            try (InputStream stream = getClass().getClassLoader().getResourceAsStream("platforms.yml")) {
-                if (stream != null) {
-                    FileUtils.copyInputStreamToFile(stream, file);
-                }
-            } catch (IOException e) {
-                logger.error("Failed to copy platforms.yml file");
-            }
+        if (!Files.exists(platformsFilePath)) {
+            ResourceFileUtils.copyResourceFile(
+                    PLATFORMS_FILE_NAME,
+                    platformsFilePath
+            );
         }
 
         this.config = mergePlatformsFile();
@@ -72,7 +71,6 @@ public class PlatformFileHandler {
             }
 
             final List<PlatformVersion> versions = new ArrayList<>();
-
             for (Map<?, ?> map : versionMap) {
                 final String version = String.valueOf(map.get("version"));
                 final String download = map.containsKey("download") ? String.valueOf(map.get("download")) : null;
@@ -85,48 +83,53 @@ public class PlatformFileHandler {
             platform.getVersions().addAll(versions);
             platforms.add(platform);
         }
+
         return platforms;
     }
 
-    @SneakyThrows
     private YamlFile mergePlatformsFile() {
-        // Load the platforms file in the user directory
-        final YamlFile userConfig = new YamlFile(file);
-        userConfig.load();
+        try {
+            // Load the platforms file in the user directory
+            final YamlFile userConfig = new YamlFile(platformsFilePath.toFile());
+            userConfig.load();
 
-        // Now load the default platforms config
-        final YamlFile defaultConfig = new YamlFile();
-        try (InputStream stream = getClass().getClassLoader().getResourceAsStream("platforms.yml")) {
-            if (stream != null) {
-                defaultConfig.load(stream);
+            // Now load the default platforms config
+            final YamlFile defaultConfig = new YamlFile();
+            try (InputStream stream = getClass().getClassLoader().getResourceAsStream(PLATFORMS_FILE_NAME)) {
+                if (stream != null) {
+                    defaultConfig.load(stream);
+                }
+            } catch (IOException e) {
+                logger.error("Failed to copy " + PLATFORMS_FILE_NAME + " file");
             }
+
+            // Merge user and default config so the user config is always up to date
+            final YamlFile mergedConfig = new YamlFile();
+            for (String key : userConfig.getKeys(false)) {
+                final ConfigurationSection section = userConfig.getConfigurationSection(key);
+                if (section == null) {
+                    continue;
+                }
+                // We want to keep custom platforms of the user so set them again in the merged config as well
+                if (section.getBoolean("custom", false)) {
+                    mergedConfig.set(key, section);
+                }
+            }
+
+            // Add all other missing platforms
+            for (String key : defaultConfig.getKeys(false)) {
+                if (!mergedConfig.contains(key)) {
+                    mergedConfig.set(key, defaultConfig.get(key));
+                }
+            }
+
+            // Save the new merged config and replace the old user config with it
+            mergedConfig.save(platformsFilePath.toFile());
+            return mergedConfig;
         } catch (IOException e) {
-            logger.error("Failed to copy platforms.yml file");
+            logger.error("Failed to merge " + PLATFORMS_FILE_NAME);
+            return new YamlFile(platformsFilePath.toFile());
         }
-
-        // Merge user and default config so the user config is always up to date
-        final YamlFile mergedConfig = new YamlFile();
-        for (String key : userConfig.getKeys(false)) {
-            final ConfigurationSection section = userConfig.getConfigurationSection(key);
-            if (section == null) {
-                continue;
-            }
-            // We want to keep custom platforms of the user so set them again in the merged config as well
-            if (section.getBoolean("custom", false)) {
-                mergedConfig.set(key, section);
-            }
-        }
-
-        // Add all other missing platforms
-        for (String key : defaultConfig.getKeys(false)) {
-            if (!mergedConfig.contains(key)) {
-                mergedConfig.set(key, defaultConfig.get(key));
-            }
-        }
-
-        // Save the new merged config and replace the old user config with it
-        mergedConfig.save(file);
-        return mergedConfig;
     }
 
     @SneakyThrows
@@ -144,7 +147,7 @@ public class PlatformFileHandler {
         }
 
         config.set(platform.getName() + ".versions", versions);
-        config.save(file);
+        config.save(platformsFilePath.toFile());
     }
 
     @SneakyThrows
@@ -179,7 +182,7 @@ public class PlatformFileHandler {
         putIfNotNull(platformMap, "versions", versions);
 
         config.set(platform.getName(), platformMap);
-        config.save(file);
+        config.save(platformsFilePath.toFile());
     }
 
     private void putIfNotNull(Map<String, Object> map, String key, Object value) {

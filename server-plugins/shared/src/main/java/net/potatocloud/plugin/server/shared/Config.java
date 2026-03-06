@@ -1,47 +1,50 @@
 package net.potatocloud.plugin.server.shared;
 
-import lombok.SneakyThrows;
+import net.potatocloud.core.utils.ResourceFileUtils;
 import org.simpleyaml.configuration.file.YamlFile;
 
-import java.io.File;
-import java.io.InputStream;
+import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class Config {
 
     private final String fileName;
-    private final File file;
+    private final Path filePath;
     private YamlFile yaml;
 
     public Config(String folder, String fileName) {
         this.fileName = fileName;
-        this.file = new File(folder, fileName);
+        this.filePath = Path.of(folder).resolve(fileName);
     }
 
-    @SneakyThrows
     public void load() {
-        if (!file.exists()) {
-            // Load default file
-            file.getParentFile().mkdirs();
-
-            try (InputStream stream = getClass().getClassLoader().getResourceAsStream(fileName)) {
-                if (stream == null) {
-                    return;
-                }
-                Files.copy(stream, file.toPath());
+        try {
+            if (filePath.getParent() != null) {
+                Files.createDirectories(filePath.getParent());
             }
-        }
 
-        yaml = new YamlFile(file);
-        yaml.loadWithComments();
+            if (Files.notExists(filePath)) {
+                ResourceFileUtils.copyResourceFile(fileName, filePath);
+            }
+
+            yaml = new YamlFile(filePath.toFile());
+            yaml.loadWithComments();
+
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load config: " + fileName, e);
+        }
     }
 
-    @SneakyThrows
     public void save() {
         if (yaml == null) {
             return;
         }
-        yaml.save();
+        try {
+            yaml.save();
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to save config: " + fileName, e);
+        }
     }
 
     public void reload() {

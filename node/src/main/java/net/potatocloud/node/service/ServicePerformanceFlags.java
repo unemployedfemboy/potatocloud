@@ -2,7 +2,10 @@ package net.potatocloud.node.service;
 
 import java.util.List;
 
-public class ServicePerformanceFlags {
+public final class ServicePerformanceFlags {
+
+    private ServicePerformanceFlags() {
+    }
 
     public static final List<String> DEFAULT_FLAGS = List.of(
             "-XX:+AlwaysPreTouch",

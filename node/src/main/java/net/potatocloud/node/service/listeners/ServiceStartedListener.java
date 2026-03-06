@@ -31,6 +31,8 @@ public class ServiceStartedListener implements PacketListener<ServiceStartedPack
 
         logger.info("Service &a" + packet.getServiceName() + "&7 is now &aonline");
 
+        // logger.info("Startup of &a" + packet.getServiceName() + "&7 took " + TimeFormatter.formatAsDuration(System.currentTimeMillis() - service.getStartTimestamp()));
+
         service.setStatus(ServiceStatus.RUNNING);
         service.update();
 

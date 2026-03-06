@@ -4,15 +4,13 @@ import net.potatocloud.api.property.Property;
 import net.potatocloud.api.utils.version.Version;
 import net.potatocloud.core.migration.Migration;
 import net.potatocloud.core.migration.MigrationManager;
+import net.potatocloud.core.utils.FileUtils;
 import net.potatocloud.node.utils.YamlUtils;
-import org.apache.commons.io.FileUtils;
 import org.simpleyaml.configuration.file.YamlFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -40,18 +38,19 @@ public class Migration_1_4_3 extends Migration {
     private void backupGroupFiles() throws IOException {
         final Path backupsDirectory = createBackupsDirectory("groups");
 
-        final Collection<File> files = FileUtils.listFiles(groupsDirectory.toFile(), new String[]{"yml"}, false);
-        for (File file : files) {
-            final Path target = backupsDirectory.resolve(file.getName());
-            Files.copy(file.toPath(), target);
+        final List<Path> files = listGroupFiles();
+
+        for (Path path : files) {
+            final Path target = backupsDirectory.resolve(path.toFile().getName());
+            Files.copy(path, target);
         }
     }
 
     private void migrateGroupFiles() throws IOException {
-        final Collection<File> files = FileUtils.listFiles(groupsDirectory.toFile(), new String[]{"yml"}, false);
+        final List<Path> files = listGroupFiles();
 
-        for (File file : files) {
-            final YamlFile config = new YamlFile(file);
+        for (Path path : files) {
+            final YamlFile config = new YamlFile(path.toFile());
             config.load();
 
             final String name = config.getString("name");
@@ -106,5 +105,12 @@ public class Migration_1_4_3 extends Migration {
 
             config.save();
         }
+    }
+
+    private List<Path> listGroupFiles() {
+        return FileUtils.list(groupsDirectory).stream()
+                .filter(Files::isRegularFile)
+                .filter(path -> path.toString().endsWith(".yml"))
+                .toList();
     }
 }
