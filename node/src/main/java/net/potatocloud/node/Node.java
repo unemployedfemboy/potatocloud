@@ -175,6 +175,7 @@ public class Node extends CloudAPI {
 
     @SneakyThrows
     public void shutdown() {
+        if (isStopping) return; // Prevent multiple shutdowns via CTRL+C
         logger.info("Shutting down node&8...");
         isStopping = true;
 
