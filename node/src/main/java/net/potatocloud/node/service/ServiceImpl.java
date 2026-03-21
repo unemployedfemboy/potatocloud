@@ -36,6 +36,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Getter
@@ -75,6 +78,8 @@ public class ServiceImpl implements Service {
     private Process serverProcess;
     private BufferedWriter processWriter;
     private BufferedReader processReader;
+
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     @Setter
     private ServiceProcessChecker processChecker;
@@ -321,6 +326,10 @@ public class ServiceImpl implements Service {
         }
 
         cleanup();
+    }
+
+    public CompletableFuture<Void> shutdownAsync() {
+        return CompletableFuture.runAsync(this::shutdownBlocking, executorService);
     }
 
     public void cleanup() {

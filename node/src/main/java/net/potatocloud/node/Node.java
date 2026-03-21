@@ -42,6 +42,8 @@ import net.potatocloud.node.version.VersionFile;
 import org.apache.commons.io.FileUtils;
 
 import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Getter
 public class Node extends CloudAPI {
@@ -98,6 +100,8 @@ public class Node extends CloudAPI {
         commandManager = new CommandManager();
         console = new Console(commandManager, this);
         logger = new Logger(console, Path.of(config.getLogsFolder()));
+
+        commandManager.setLogger(logger);
 
         final Screen nodeScreen = new Screen(Screen.NODE_SCREEN);
         screenManager = new ScreenManager(console, logger);
@@ -177,9 +181,12 @@ public class Node extends CloudAPI {
         serviceStartQueue.close();
         if (!serviceManager.getAllServices().isEmpty()) {
             logger.info("Shutting down all running services&8...");
-            for (Service service : serviceManager.getAllServices()) {
-                ((ServiceImpl) service).shutdownBlocking();
-            }
+
+            List<CompletableFuture<Void>> futures = serviceManager.getAllServices().stream()
+                    .map(service -> ((ServiceImpl) service).shutdownAsync())
+                    .toList();
+
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         }
 
         logger.info("Stopping network server&8...");
