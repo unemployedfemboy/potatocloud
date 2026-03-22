@@ -2,17 +2,13 @@ package net.potatocloud.node.version;
 
 import lombok.SneakyThrows;
 import net.potatocloud.api.utils.version.Version;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.file.PathUtils;
 
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
+import java.nio.file.*;
 
 public final class VersionFile {
 
-    public static Path VERSION_FILE = PathUtils.current().resolve(".version");
+    public static final Path VERSION_FILE = Paths.get("").toAbsolutePath().resolve(".version");
 
     private VersionFile() {
     }
@@ -22,9 +18,8 @@ public final class VersionFile {
         if (!Files.exists(VERSION_FILE)) {
             return null;
         }
-        return Version.fromString(
-                FileUtils.readFileToString(VERSION_FILE.toFile(), StandardCharsets.UTF_8).strip()
-        );
+        final String content = Files.readString(VERSION_FILE, StandardCharsets.UTF_8).strip();
+        return Version.fromString(content);
     }
 
     @SneakyThrows
@@ -37,6 +32,6 @@ public final class VersionFile {
             }
         }
 
-        FileUtils.writeStringToFile(VERSION_FILE.toFile(), version.toString(), StandardCharsets.UTF_8);
+        Files.writeString(VERSION_FILE, version.toString(), StandardCharsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING);
     }
 }

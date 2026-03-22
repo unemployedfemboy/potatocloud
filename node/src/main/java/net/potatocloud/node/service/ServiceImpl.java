@@ -16,6 +16,7 @@ import net.potatocloud.api.service.ServiceManager;
 import net.potatocloud.api.service.ServiceStatus;
 import net.potatocloud.core.networking.NetworkServer;
 import net.potatocloud.core.networking.packet.packets.service.ServiceRemovePacket;
+import net.potatocloud.core.utils.FileUtils;
 import net.potatocloud.node.config.NodeConfig;
 import net.potatocloud.node.console.Console;
 import net.potatocloud.node.console.Logger;
@@ -27,11 +28,13 @@ import net.potatocloud.node.platform.cache.CacheManager;
 import net.potatocloud.node.screen.Screen;
 import net.potatocloud.node.screen.ScreenManager;
 import net.potatocloud.node.template.TemplateManager;
-import org.apache.commons.io.FileUtils;
 import oshi.SystemInfo;
 import oshi.software.os.OSProcess;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -167,9 +170,9 @@ public class ServiceImpl implements Service {
         Files.createDirectories(pluginsFolder);
 
         final String pluginName = this.getPlatformPluginName();
-        FileUtils.copyFile(
-                Path.of(config.getDataFolder(), pluginName).toFile(),
-                pluginsFolder.resolve(pluginName).toFile(),
+        Files.copy(
+                Path.of(config.getDataFolder(), pluginName),
+                pluginsFolder.resolve(pluginName),
                 StandardCopyOption.REPLACE_EXISTING
         );
 
@@ -184,9 +187,10 @@ public class ServiceImpl implements Service {
         final Path cacheFolder = cacheManager.preCachePlatform(group);
         cacheManager.copyCacheToService(group, cacheFolder, directory);
 
-        FileUtils.copyFile(
-                PlatformUtils.getPlatformJarFile(platform, version),
-                directory.resolve("server.jar").toFile()
+        Files.copy(
+                PlatformUtils.getPlatformJarPath(platform, version),
+                directory.resolve("server.jar"),
+                StandardCopyOption.REPLACE_EXISTING
         );
 
         for (String step : platform.getPrepareSteps()) {
@@ -312,7 +316,7 @@ public class ServiceImpl implements Service {
         }
 
         if (serverProcess != null) {
-            final boolean exited = serverProcess.waitFor(10, TimeUnit.SECONDS);
+            final boolean exited = serverProcess.waitFor(config.getKillTimeout(), TimeUnit.SECONDS);
             if (!exited) {
                 serverProcess.destroyForcibly();
                 serverProcess.waitFor();
@@ -345,11 +349,11 @@ public class ServiceImpl implements Service {
             eventManager.call(new ServiceStoppedEvent(this.getName()));
         }
 
-        if (!group.isStatic()) {
-            if (Files.exists(directory)) {
-                if (!FileUtils.deleteQuietly(directory.toFile())) {
-                    logger.error("Temp directory for " + getName() + " could not be deleted! The service might still be running");
-                }
+        if (!group.isStatic() && Files.exists(directory)) {
+            try {
+                FileUtils.deleteDirectory(directory);
+            } catch (RuntimeException e) {
+                logger.error("Temp directory for " + getName() + " could not be deleted! The service might still be running");
             }
         }
 
@@ -393,10 +397,7 @@ public class ServiceImpl implements Service {
             templateManager.createTemplate(targetPath.toFile().getName());
         }
 
-        try {
-            FileUtils.copyDirectory(sourcePath.toFile(), targetPath.toFile());
-        } catch (IOException ignored) {
-        }
+        FileUtils.copyDirectory(sourcePath, targetPath);
     }
 
     @Override

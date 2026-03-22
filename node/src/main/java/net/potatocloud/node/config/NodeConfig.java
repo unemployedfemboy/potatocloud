@@ -1,53 +1,67 @@
 package net.potatocloud.node.config;
 
 import lombok.Getter;
-import lombok.SneakyThrows;
-import net.potatocloud.node.Node;
-import org.apache.commons.io.FileUtils;
+import net.potatocloud.core.utils.ResourceFileUtils;
 import org.simpleyaml.configuration.file.YamlFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @Getter
 public class NodeConfig {
 
-    private static final String CONFIG_FILE_NAME = "config.yml";
+    public static final String CONFIG_FILE_NAME = "config.yml";
 
-    private final String prompt;
-    private final boolean enableBanner;
-    private final int primaryColorCode;
-    private final boolean logPlayerConnections;
+    private final YamlFile config;
 
-    private final int serviceStartPort;
-    private final int proxyStartPort;
-    private final String splitter;
-    private final boolean platformAutoUpdate;
+    private String prompt;
+    private boolean enableBanner;
+    private int primaryColorCode;
+    private boolean logPlayerConnections;
 
-    private final String groupsFolder;
-    private final String staticFolder;
-    private final String tempServicesFolder;
-    private final String templatesFolder;
-    private final String platformsFolder;
-    private final String logsFolder;
-    private final String dataFolder;
-    private final String backupsFolder;
+    private int serviceStartPort;
+    private int proxyStartPort;
+    private String splitter;
+    private boolean platformAutoUpdate;
+    private int maxServices;
+    private int maxStartingServices;
+    private int killTimeout;
 
-    private final String nodeHost;
-    private final int nodePort;
+    private String groupsFolder;
+    private String staticFolder;
+    private String tempServicesFolder;
+    private String templatesFolder;
+    private String platformsFolder;
+    private String logsFolder;
+    private String dataFolder;
+    private String backupsFolder;
 
-    @SneakyThrows
+    private String nodeHost;
+    private int nodePort;
+
+    private boolean disableUpdateChecker;
+    private boolean debug;
+
     public NodeConfig() {
-        final File configFile = new File(CONFIG_FILE_NAME);
+        final Path configPath = Path.of(CONFIG_FILE_NAME);
 
-        if (!configFile.exists()) {
-            createFile(configFile);
+        if (!Files.exists(configPath)) {
+            ResourceFileUtils.copyResourceFile(
+                    CONFIG_FILE_NAME,
+                    configPath
+            );
         }
 
-        final YamlFile config = new YamlFile(configFile);
-        config.load();
+        this.config = new YamlFile(configPath.toFile());
+        try {
+            config.load();
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read " + CONFIG_FILE_NAME, e);
+        }
+    }
 
+    public void loadKeys() {
         prompt = config.getString("console.prompt");
         enableBanner = config.getBoolean("console.enable-banner");
         primaryColorCode = config.getInt("console.primary-color");
@@ -55,8 +69,11 @@ public class NodeConfig {
 
         serviceStartPort = config.getInt("service.service-start-port");
         proxyStartPort = config.getInt("service.proxy-start-port");
-        splitter = config.getString("service.service-splitter");
+        splitter = config.getString("service.splitter");
         platformAutoUpdate = config.getBoolean("service.auto-update-platforms");
+        maxServices = config.getInt("service.max-services");
+        maxStartingServices = config.getInt("service.max-starting-services");
+        killTimeout = config.getInt("service.kill-timeout");
 
         groupsFolder = config.getString("folders.groups");
         staticFolder = config.getString("folders.static");
@@ -69,16 +86,8 @@ public class NodeConfig {
 
         nodeHost = config.getString("node.host");
         nodePort = config.getInt("node.port");
-    }
 
-    private void createFile(File configFile) {
-        try (InputStream stream = Node.getInstance().getClass().getClassLoader().getResourceAsStream(CONFIG_FILE_NAME)) {
-            if (stream == null) {
-                throw new IllegalStateException(CONFIG_FILE_NAME + " not found in resources!");
-            }
-            FileUtils.copyInputStreamToFile(stream, configFile);
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to copy " + CONFIG_FILE_NAME + " from resources!", e);
-        }
+        disableUpdateChecker = config.getBoolean("disable-update-checker");
+        debug = config.getBoolean("debug");
     }
 }

@@ -1,14 +1,14 @@
 package net.potatocloud.node.utils;
 
-import lombok.experimental.UtilityClass;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 
-@UtilityClass
-public class NetworkUtils {
+public final class NetworkUtils {
 
-    public boolean isPortFree(int port) {
+    private NetworkUtils() {
+    }
+
+    public static boolean isPortFree(int port) {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             serverSocket.setReuseAddress(true);
             return true;

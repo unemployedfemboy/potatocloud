@@ -17,9 +17,11 @@ public final class YamlUtils {
 
     public static Map<String, Property<?>> getProperties(YamlFile config) {
         final Map<String, Property<?>> properties = new HashMap<>();
+
         if (config.isSet("properties")) {
             for (String key : config.getConfigurationSection("properties").getKeys(false)) {
                 final Object value = config.get("properties." + key + ".value");
+
                 Object defaultValue = config.get("properties." + key + ".default");
                 if (defaultValue == null) {
                     defaultValue = value;

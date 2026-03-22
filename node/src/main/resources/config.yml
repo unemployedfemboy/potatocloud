@@ -20,11 +20,20 @@ service:
   proxy-start-port: 25565
 
   # Splitter used in service names
-  service-splitter: '-'
+  splitter: '-'
 
   # Auto updates platform jars to latest build in the same MC version.
   # Also updates MC version if using 'platform-latest'
   auto-update-platforms: true
+
+  # Maximum number of services that can run at the same time (-1 = unlimited)
+  max-services: -1
+
+  # Maximum number of services that can start at the same time (-1 = unlimited)
+  max-starting-servics: -1
+
+  # Timeout in seconds before forcibly killing a service after normal stop attempt
+  kill-timeout: 10
 
 folders:
   groups: groups
@@ -36,5 +45,11 @@ folders:
   data: data
 
 node:
+  # Node host address
   host: 127.0.0.1
+
+  # Node communication port
   port: 16000
+
+disable-update-checker: false
+debug: false

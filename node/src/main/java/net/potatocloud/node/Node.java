@@ -15,6 +15,7 @@ import net.potatocloud.core.migration.MigrationManager;
 import net.potatocloud.core.networking.NetworkServer;
 import net.potatocloud.core.networking.netty.server.NettyNetworkServer;
 import net.potatocloud.core.networking.packet.PacketManager;
+import net.potatocloud.core.utils.FileUtils;
 import net.potatocloud.node.command.CommandManager;
 import net.potatocloud.node.command.commands.*;
 import net.potatocloud.node.config.NodeConfig;
@@ -22,6 +23,7 @@ import net.potatocloud.node.console.Console;
 import net.potatocloud.node.console.Logger;
 import net.potatocloud.node.group.ServiceGroupManagerImpl;
 import net.potatocloud.node.migration.Migration_1_4_3;
+import net.potatocloud.node.migration.Migration_1_4_4;
 import net.potatocloud.node.platform.DownloadManager;
 import net.potatocloud.node.platform.PlatformManagerImpl;
 import net.potatocloud.node.platform.cache.CacheManager;
@@ -32,14 +34,13 @@ import net.potatocloud.node.screen.ScreenManager;
 import net.potatocloud.node.service.ServiceDefaultFiles;
 import net.potatocloud.node.service.ServiceImpl;
 import net.potatocloud.node.service.ServiceManagerImpl;
-import net.potatocloud.node.service.ServiceStartQueue;
+import net.potatocloud.node.service.start.ServiceStartScheduler;
 import net.potatocloud.node.setup.SetupManager;
 import net.potatocloud.node.template.TemplateManager;
 import net.potatocloud.node.utils.HardwareUtils;
 import net.potatocloud.node.utils.NetworkUtils;
 import net.potatocloud.node.version.UpdateChecker;
 import net.potatocloud.node.version.VersionFile;
-import org.apache.commons.io.FileUtils;
 
 import java.nio.file.Path;
 
@@ -69,24 +70,19 @@ public class Node extends CloudAPI {
     private final CacheManager cacheManager;
 
     private final ServiceManagerImpl serviceManager;
-    private final ServiceStartQueue serviceStartQueue;
+    private final ServiceStartScheduler serviceStartScheduler;
 
     private final SetupManager setupManager;
     private final UpdateChecker updateChecker;
 
     private final Version previousVersion;
     private boolean ready = false;
-    private boolean isStopping;
+    private boolean stopping;
 
     public Node(long startupTime) {
         this.startupTime = startupTime;
 
         config = new NodeConfig();
-
-        if (!NetworkUtils.isPortFree(config.getNodePort())) {
-            System.err.println("The configured node port is already in use. Is another instance of potatocloud already running on this port?");
-            System.exit(0);
-        }
 
         previousVersion = VersionFile.read();
         migrationManager = new MigrationManager(previousVersion);
@@ -95,9 +91,16 @@ public class Node extends CloudAPI {
 
         VersionFile.write(CloudAPI.VERSION);
 
+        config.loadKeys();
+
+        if (!NetworkUtils.isPortFree(config.getNodePort())) {
+            System.err.println("The configured node port is already in use. Is another instance of potatocloud already running on this port?");
+            System.exit(0);
+        }
+
         commandManager = new CommandManager();
         console = new Console(commandManager, this);
-        logger = new Logger(console, Path.of(config.getLogsFolder()));
+        logger = new Logger(config, console, Path.of(config.getLogsFolder()));
 
         final Screen nodeScreen = new Screen(Screen.NODE_SCREEN);
         screenManager = new ScreenManager(console, logger);
@@ -113,7 +116,10 @@ public class Node extends CloudAPI {
         setupManager = new SetupManager();
 
         updateChecker = new UpdateChecker(logger);
-        updateChecker.checkForUpdates();
+
+        if (!config.isDisableUpdateChecker()) {
+            updateChecker.checkForUpdates();
+        }
 
         packetManager = new PacketManager();
         server = new NettyNetworkServer(packetManager);
@@ -125,7 +131,6 @@ public class Node extends CloudAPI {
         playerManager = new CloudPlayerManagerImpl(server);
         templateManager = new TemplateManager(logger, Path.of(config.getTemplatesFolder()));
         groupManager = new ServiceGroupManagerImpl(Path.of(config.getGroupsFolder()), server, logger);
-        ((ServiceGroupManagerImpl) groupManager).loadGroups();
 
         if (!groupManager.getAllServiceGroups().isEmpty()) {
             final int groupCount = groupManager.getAllServiceGroups().size();
@@ -140,22 +145,23 @@ public class Node extends CloudAPI {
         downloadManager = new DownloadManager(Path.of(config.getPlatformsFolder()), logger);
         cacheManager = new CacheManager(logger);
 
-        ServiceDefaultFiles.copyDefaultFiles(logger, config, getClass().getClassLoader());
+        ServiceDefaultFiles.copyDefaultFiles(Path.of(config.getDataFolder()));
         serviceManager = new ServiceManagerImpl(
                 config, logger, server, eventManager, groupManager, screenManager, templateManager, platformManager, downloadManager, cacheManager, console
         );
-        serviceStartQueue = new ServiceStartQueue(groupManager, serviceManager);
+        serviceStartScheduler = new ServiceStartScheduler(config, groupManager, serviceManager, eventManager);
 
         registerCommands();
 
         logger.info("Startup completed in &a" + (System.currentTimeMillis() - startupTime) + "ms &8| &7Use &8'&ahelp&8' &7to see available commands");
 
-        serviceStartQueue.start();
+        serviceStartScheduler.start();
         ready = true;
     }
 
     private void registerMigrations() {
-        new Migration_1_4_3(Path.of(config.getGroupsFolder()), migrationManager);
+        new Migration_1_4_3(Path.of(config.getConfig().getString("folders.groups")), migrationManager);
+        new Migration_1_4_4(migrationManager);
     }
 
     private void registerCommands() {
@@ -172,9 +178,10 @@ public class Node extends CloudAPI {
     @SneakyThrows
     public void shutdown() {
         logger.info("Shutting down node&8...");
-        isStopping = true;
+        stopping = true;
 
-        serviceStartQueue.close();
+        serviceStartScheduler.close();
+
         if (!serviceManager.getAllServices().isEmpty()) {
             logger.info("Shutting down all running services&8...");
             for (Service service : serviceManager.getAllServices()) {
@@ -186,7 +193,7 @@ public class Node extends CloudAPI {
         server.close();
 
         logger.info("Cleaning up temporary files&8...");
-        FileUtils.deleteDirectory(Path.of(config.getTempServicesFolder()).toFile());
+        FileUtils.deleteDirectory(Path.of(config.getTempServicesFolder()));
 
         logger.info("Shutdown complete. Goodbye!");
         console.close();

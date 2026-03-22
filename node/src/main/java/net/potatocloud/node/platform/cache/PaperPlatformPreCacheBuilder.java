@@ -4,10 +4,9 @@ import lombok.SneakyThrows;
 import net.potatocloud.api.group.ServiceGroup;
 import net.potatocloud.api.platform.Platform;
 import net.potatocloud.api.platform.PlatformVersion;
+import net.potatocloud.core.utils.FileUtils;
 import net.potatocloud.node.platform.PlatformUtils;
-import org.apache.commons.io.FileUtils;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -17,7 +16,7 @@ public class PaperPlatformPreCacheBuilder implements PlatformPreCacheBuilder {
     @Override
     @SneakyThrows
     public void buildCache(Platform platform, PlatformVersion version, ServiceGroup group, Path cacheFolder) {
-        final File platformJarFile = PlatformUtils.getPlatformJarFile(platform, version);
+        final Path platformJarPath = PlatformUtils.getPlatformJarPath(platform, version);
 
         // Create a temporary folder for cache generation
         final Path tempDir = cacheFolder.resolve("temp");
@@ -27,7 +26,7 @@ public class PaperPlatformPreCacheBuilder implements PlatformPreCacheBuilder {
         args.add(group.getJavaCommand());
         args.add("-Dpaperclip.patchonly=true");
         args.add("-jar");
-        args.add(platformJarFile.getAbsolutePath());
+        args.add(platformJarPath.toFile().getAbsolutePath());
 
         // Run the server process to generate cache
         final ProcessBuilder processBuilder = new ProcessBuilder(args).directory(tempDir.toFile());
@@ -37,20 +36,20 @@ public class PaperPlatformPreCacheBuilder implements PlatformPreCacheBuilder {
         // copy generated files to the actual cache folder
         final Path generatedCache = tempDir.resolve("cache");
         if (Files.exists(generatedCache)) {
-            FileUtils.copyDirectory(generatedCache.toFile(), cacheFolder.resolve("cache").toFile());
+            FileUtils.copyDirectory(generatedCache, cacheFolder.resolve("cache"));
         }
 
         final Path generatedLibraries = tempDir.resolve("libraries");
         if (Files.exists(generatedLibraries)) {
-            FileUtils.copyDirectory(generatedLibraries.toFile(), cacheFolder.resolve("libraries").toFile());
+            FileUtils.copyDirectory(generatedLibraries, cacheFolder.resolve("libraries"));
         }
 
         final Path generatedVersions = tempDir.resolve("versions");
         if (Files.exists(generatedVersions)) {
-            FileUtils.copyDirectory(generatedVersions.toFile(), cacheFolder.resolve("versions").toFile());
+            FileUtils.copyDirectory(generatedVersions, cacheFolder.resolve("versions"));
         }
 
-        FileUtils.deleteDirectory(tempDir.toFile());
+        FileUtils.deleteDirectory(tempDir);
     }
 
     @SneakyThrows
@@ -62,17 +61,17 @@ public class PaperPlatformPreCacheBuilder implements PlatformPreCacheBuilder {
         // Copy cached folders to the service directory
         final Path cachedCache = cacheFolder.resolve("cache");
         if (Files.exists(cachedCache)) {
-            FileUtils.copyDirectory(cachedCache.toFile(), serviceDir.resolve("cache").toFile());
+            FileUtils.copyDirectory(cachedCache, serviceDir.resolve("cache"));
         }
 
         final Path cachedLibraries = cacheFolder.resolve("libraries");
         if (Files.exists(cachedLibraries)) {
-            FileUtils.copyDirectory(cachedLibraries.toFile(), serviceDir.resolve("libraries").toFile());
+            FileUtils.copyDirectory(cachedLibraries, serviceDir.resolve("libraries"));
         }
 
         final Path cachedVersions = cacheFolder.resolve("versions");
         if (Files.exists(cachedVersions)) {
-            FileUtils.copyDirectory(cachedVersions.toFile(), serviceDir.resolve("versions").toFile());
+            FileUtils.copyDirectory(cachedVersions, serviceDir.resolve("versions"));
         }
     }
 }
