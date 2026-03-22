@@ -11,7 +11,7 @@ import java.nio.file.Path;
 @Getter
 public class NodeConfig {
 
-    private static final String CONFIG_FILE_NAME = "config.yml";
+    public static final String CONFIG_FILE_NAME = "config.yml";
 
     private final String prompt;
     private final boolean enableBanner;
@@ -22,6 +22,9 @@ public class NodeConfig {
     private final int proxyStartPort;
     private final String splitter;
     private final boolean platformAutoUpdate;
+    private final int maxServices;
+    private final int maxStartingServices;
+    private final int killTimeout;
 
     private final String groupsFolder;
     private final String staticFolder;
@@ -34,6 +37,9 @@ public class NodeConfig {
 
     private final String nodeHost;
     private final int nodePort;
+
+    private final boolean disableUpdateChecker;
+    private final boolean debug;
 
     public NodeConfig() {
         final Path configPath = Path.of(CONFIG_FILE_NAME);
@@ -59,8 +65,11 @@ public class NodeConfig {
 
         serviceStartPort = config.getInt("service.service-start-port");
         proxyStartPort = config.getInt("service.proxy-start-port");
-        splitter = config.getString("service.service-splitter");
+        splitter = config.getString("service.splitter");
         platformAutoUpdate = config.getBoolean("service.auto-update-platforms");
+        maxServices = config.getInt("service.max-services");
+        maxStartingServices = config.getInt("service.max-starting-services");
+        killTimeout = config.getInt("service.kill-timeout");
 
         groupsFolder = config.getString("folders.groups");
         staticFolder = config.getString("folders.static");
@@ -73,5 +82,8 @@ public class NodeConfig {
 
         nodeHost = config.getString("node.host");
         nodePort = config.getInt("node.port");
+
+        disableUpdateChecker = config.getBoolean("disable-update-checke");
+        debug = config.getBoolean("debug");
     }
 }

@@ -15,7 +15,7 @@ public class PlayerUsageCondition implements ServiceStartCondition {
                 .filter(service -> service.isOnline() || service.getStatus() == ServiceStatus.STARTING)
                 .toList();
 
-        // If start percentage is disabled, do not start a new service
+        // If start percentage is set to -1 (disabled), do not start a new service
         if (group.getStartPercentage() == -1) {
             return false;
         }

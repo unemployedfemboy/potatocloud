@@ -316,7 +316,7 @@ public class ServiceImpl implements Service {
         }
 
         if (serverProcess != null) {
-            final boolean exited = serverProcess.waitFor(10, TimeUnit.SECONDS);
+            final boolean exited = serverProcess.waitFor(config.getKillTimeout(), TimeUnit.SECONDS);
             if (!exited) {
                 serverProcess.destroyForcibly();
                 serverProcess.waitFor();

@@ -3,6 +3,7 @@ package net.potatocloud.node.console;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.potatocloud.node.Node;
+import net.potatocloud.node.config.NodeConfig;
 import net.potatocloud.node.screen.Screen;
 
 import java.io.IOException;
@@ -24,11 +25,13 @@ public class Logger {
     private static final String LATEST_LOG_FILENAME = "latest.log";
     private static final Pattern COLOR_PATTERN = Pattern.compile("(&.)|\u001B\\[[;\\d]*m");
 
+    private final NodeConfig config;
     private final Console console;
     private final Path logsDirectory;
     private final List<String> cachedLogs = new ArrayList<>();
 
-    public Logger(Console console, Path logsDirectory) {
+    public Logger(NodeConfig config, Console console, Path logsDirectory) {
+        this.config = config;
         this.console = console;
         this.logsDirectory = logsDirectory;
 
@@ -60,6 +63,12 @@ public class Logger {
 
     public void error(String message) {
         log(Level.ERROR, message);
+    }
+
+    public void debug(String message) {
+        if (config.isDebug()) {
+            log(Level.DEBUG, message);
+        }
     }
 
     public void logCommand(String command) {
@@ -136,6 +145,7 @@ public class Logger {
         INFO("&a"),
         WARN("&e"),
         ERROR("&c"),
+        DEBUG("&e"),
         COMMAND("&7");
 
         private final String colorCode;

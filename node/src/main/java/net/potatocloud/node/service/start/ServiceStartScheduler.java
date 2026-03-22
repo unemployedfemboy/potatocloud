@@ -7,6 +7,7 @@ import net.potatocloud.api.group.ServiceGroupManager;
 import net.potatocloud.api.property.DefaultProperties;
 import net.potatocloud.api.service.Service;
 import net.potatocloud.api.service.ServiceManager;
+import net.potatocloud.node.config.NodeConfig;
 import net.potatocloud.node.service.start.condition.ServiceStartCondition;
 import net.potatocloud.node.service.start.condition.conditions.MinOnlineCondition;
 import net.potatocloud.node.service.start.condition.conditions.PlayerUsageCondition;
@@ -31,14 +32,14 @@ public class ServiceStartScheduler {
 
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
-    public ServiceStartScheduler(ServiceGroupManager groupManager, ServiceManager serviceManager, EventManager eventManager) {
+    public ServiceStartScheduler(NodeConfig config, ServiceGroupManager groupManager, ServiceManager serviceManager, EventManager eventManager) {
         this.groupManager = groupManager;
         this.serviceManager = serviceManager;
 
         this.rules = List.of(
                 new GroupMaxOnlineRule(),
-                new MaxServicesRule(serviceManager),
-                new MaxStartingRule(serviceManager)
+                new MaxServicesRule(config, serviceManager),
+                new MaxStartingRule(config, serviceManager)
         );
 
         this.conditions = List.of(

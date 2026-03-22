@@ -23,6 +23,7 @@ import net.potatocloud.node.console.Console;
 import net.potatocloud.node.console.Logger;
 import net.potatocloud.node.group.ServiceGroupManagerImpl;
 import net.potatocloud.node.migration.Migration_1_4_3;
+import net.potatocloud.node.migration.Migration_1_4_4;
 import net.potatocloud.node.platform.DownloadManager;
 import net.potatocloud.node.platform.PlatformManagerImpl;
 import net.potatocloud.node.platform.cache.CacheManager;
@@ -81,13 +82,6 @@ public class Node extends CloudAPI {
     public Node(long startupTime) {
         this.startupTime = startupTime;
 
-        config = new NodeConfig();
-
-        if (!NetworkUtils.isPortFree(config.getNodePort())) {
-            System.err.println("The configured node port is already in use. Is another instance of potatocloud already running on this port?");
-            System.exit(0);
-        }
-
         previousVersion = VersionFile.read();
         migrationManager = new MigrationManager(previousVersion);
         registerMigrations();
@@ -95,9 +89,16 @@ public class Node extends CloudAPI {
 
         VersionFile.write(CloudAPI.VERSION);
 
+        config = new NodeConfig();
+
+        if (!NetworkUtils.isPortFree(config.getNodePort())) {
+            System.err.println("The configured node port is already in use. Is another instance of potatocloud already running on this port?");
+            System.exit(0);
+        }
+
         commandManager = new CommandManager();
         console = new Console(commandManager, this);
-        logger = new Logger(console, Path.of(config.getLogsFolder()));
+        logger = new Logger(config, console, Path.of(config.getLogsFolder()));
 
         final Screen nodeScreen = new Screen(Screen.NODE_SCREEN);
         screenManager = new ScreenManager(console, logger);
@@ -113,7 +114,10 @@ public class Node extends CloudAPI {
         setupManager = new SetupManager();
 
         updateChecker = new UpdateChecker(logger);
-        updateChecker.checkForUpdates();
+
+        if (!config.isDisableUpdateChecker()) {
+            updateChecker.checkForUpdates();
+        }
 
         packetManager = new PacketManager();
         server = new NettyNetworkServer(packetManager);
@@ -143,7 +147,7 @@ public class Node extends CloudAPI {
         serviceManager = new ServiceManagerImpl(
                 config, logger, server, eventManager, groupManager, screenManager, templateManager, platformManager, downloadManager, cacheManager, console
         );
-        serviceStartScheduler = new ServiceStartScheduler(groupManager, serviceManager, eventManager);
+        serviceStartScheduler = new ServiceStartScheduler(config, groupManager, serviceManager, eventManager);
 
         registerCommands();
 
@@ -155,6 +159,7 @@ public class Node extends CloudAPI {
 
     private void registerMigrations() {
         new Migration_1_4_3(Path.of(config.getGroupsFolder()), migrationManager);
+        new Migration_1_4_4(migrationManager);
     }
 
     private void registerCommands() {
