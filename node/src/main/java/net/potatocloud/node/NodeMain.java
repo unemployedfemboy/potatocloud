@@ -6,5 +6,7 @@ public class NodeMain {
         final long startupTime = System.currentTimeMillis();
 
         new Node(startupTime);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> Node.getInstance().shutdown()));
     }
 }
