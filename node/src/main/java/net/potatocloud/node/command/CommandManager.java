@@ -2,17 +2,16 @@ package net.potatocloud.node.command;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 import net.potatocloud.node.console.Logger;
 
 import java.util.*;
 
-@Slf4j
 @Getter
 public class CommandManager {
 
     private final Map<String, Command> commands = new HashMap<>();
     private final Map<String, Command> aliases = new HashMap<>();
+
     @Setter
     private Logger logger;
 

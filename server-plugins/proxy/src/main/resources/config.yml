@@ -1,8 +1,7 @@
 permission: "potatocloud.proxy"
-aliases:
+command-aliases:
   - maintenance
-  - wartungen
-bypass-permission: "potatocloud.maintenance.bypass"
+maintenance-bypass-permission: "potatocloud.maintenance.bypass"
 useTablistBanner: false # Only works with Labymod
 tablistImageURL: "https://imgur.com/TGofXh8.png%22" # Only works with Labymod. "%22" is the Size of the Banner.
 useTablist: true

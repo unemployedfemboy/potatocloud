@@ -8,7 +8,6 @@ import net.potatocloud.api.group.ServiceGroup;
 import net.potatocloud.api.group.ServiceGroupManager;
 import net.potatocloud.api.player.CloudPlayerManager;
 import net.potatocloud.api.property.PropertyHolder;
-import net.potatocloud.api.service.Service;
 import net.potatocloud.api.utils.version.Version;
 import net.potatocloud.core.event.ServerEventManager;
 import net.potatocloud.core.migration.MigrationManager;
@@ -181,7 +180,10 @@ public class Node extends CloudAPI {
 
     @SneakyThrows
     public void shutdown() {
-        if (isStopping) return; // Prevent multiple shutdowns via CTRL+C
+        if (stopping) {
+            return;
+        }
+
         logger.info("Shutting down node&8...");
         stopping = true;
 
@@ -190,11 +192,11 @@ public class Node extends CloudAPI {
         if (!serviceManager.getAllServices().isEmpty()) {
             logger.info("Shutting down all running services&8...");
 
-            List<CompletableFuture<Void>> futures = serviceManager.getAllServices().stream()
-                    .map(service -> ((ServiceImpl) service).shutdownAsync())
-                    .toList();
-
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+            CompletableFuture.allOf(
+                    serviceManager.getAllServices().stream()
+                            .map(service -> ((ServiceImpl) service).shutdownAsync())
+                            .toArray(CompletableFuture[]::new)
+            ).join();
         }
 
         logger.info("Stopping network server&8...");

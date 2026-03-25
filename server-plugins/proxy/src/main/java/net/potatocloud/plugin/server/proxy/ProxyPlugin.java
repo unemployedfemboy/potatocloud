@@ -60,7 +60,7 @@ public class ProxyPlugin {
     }
 
     private String[] commandAliases() {
-        return config.yaml().getStringList("aliases").toArray(new String[0]);
+        return config.yaml().getStringList("command-aliases").toArray(new String[0]);
     }
 
     public boolean isMaintenance() {
