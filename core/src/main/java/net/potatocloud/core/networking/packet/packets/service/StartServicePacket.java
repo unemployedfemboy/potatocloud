@@ -13,6 +13,7 @@ import net.potatocloud.core.networking.packet.PacketIds;
 public class StartServicePacket implements Packet {
 
     private String groupName;
+    private String requestId;
 
     @Override
     public int getId() {
@@ -22,10 +23,12 @@ public class StartServicePacket implements Packet {
     @Override
     public void write(PacketBuffer buf) {
         buf.writeString(groupName);
+        buf.writeString(requestId);
     }
 
     @Override
     public void read(PacketBuffer buf) {
         groupName = buf.readString();
+        requestId = buf.readString();
     }
 }

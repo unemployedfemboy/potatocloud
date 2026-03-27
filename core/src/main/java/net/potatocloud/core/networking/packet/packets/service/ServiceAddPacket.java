@@ -23,6 +23,7 @@ public class ServiceAddPacket implements Packet {
     private Map<String, Property<?>> propertyMap;
     private String status;
     private int maxPlayers;
+    private String requestId;
 
     @Override
     public int getId() {
@@ -39,6 +40,7 @@ public class ServiceAddPacket implements Packet {
         buf.writePropertyMap(propertyMap);
         buf.writeString(status);
         buf.writeInt(maxPlayers);
+        buf.writeString(requestId);
     }
 
     @Override
@@ -51,5 +53,6 @@ public class ServiceAddPacket implements Packet {
         propertyMap = buf.readPropertyMap();
         status = buf.readString();
         maxPlayers = buf.readInt();
+        requestId = buf.readString();
     }
 }

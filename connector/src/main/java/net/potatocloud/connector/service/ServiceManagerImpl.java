@@ -1,5 +1,6 @@
 package net.potatocloud.connector.service;
 
+import lombok.Getter;
 import net.potatocloud.api.service.Service;
 import net.potatocloud.api.service.ServiceManager;
 import net.potatocloud.connector.service.listeners.ServiceAddListener;
@@ -10,11 +11,19 @@ import net.potatocloud.core.networking.packet.packets.service.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ServiceManagerImpl implements ServiceManager {
 
     private final List<Service> services = new CopyOnWriteArrayList<>();
+
+    @Getter
+    private final Map<String, CompletableFuture<Service>> pendingStarts = new ConcurrentHashMap<>();
+
     private final NetworkClient client;
 
     public ServiceManagerImpl(NetworkClient client) {
@@ -62,14 +71,18 @@ public class ServiceManagerImpl implements ServiceManager {
 
     @Override
     public void startService(String groupName) {
-        client.send(new StartServicePacket(groupName));
+        client.send(new StartServicePacket(groupName, null));
     }
 
     @Override
-    public void startServices(String groupName, int amount) {
-        for (int i = 0; i < amount; i++) {
-            startService(groupName);
-        }
+    public CompletableFuture<Service> startServiceAsync(String groupName) {
+        final CompletableFuture<Service> future = new CompletableFuture<>();
+        final String requestId = UUID.randomUUID().toString();
+
+        pendingStarts.put(requestId, future);
+        client.send(new StartServicePacket(groupName, requestId));
+
+        return future;
     }
 
     @Override

@@ -10,6 +10,9 @@ import net.potatocloud.core.networking.NetworkConnection;
 import net.potatocloud.core.networking.packet.PacketListener;
 import net.potatocloud.core.networking.packet.packets.service.ServiceAddPacket;
 
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 @RequiredArgsConstructor
 public class ServiceAddListener implements PacketListener<ServiceAddPacket> {
 
@@ -29,8 +32,19 @@ public class ServiceAddListener implements PacketListener<ServiceAddPacket> {
                 0
         );
 
-        if (!serviceManager.getAllServices().contains(service)) {
+        final List<Service> services = serviceManager.getAllServices();
+        if (!services.contains(service)) {
             serviceManager.addService(service);
+        }
+
+        final String requestId = packet.getRequestId();
+        if (requestId == null) {
+            return;
+        }
+
+        final CompletableFuture<Service> future = serviceManager.getPendingStarts().remove(requestId);
+        if (future != null) {
+            future.complete(service);
         }
     }
 }

@@ -3,15 +3,15 @@ package net.potatocloud.node.service.listeners;
 import lombok.RequiredArgsConstructor;
 import net.potatocloud.api.group.ServiceGroup;
 import net.potatocloud.api.group.ServiceGroupManager;
-import net.potatocloud.api.service.ServiceManager;
 import net.potatocloud.core.networking.NetworkConnection;
 import net.potatocloud.core.networking.packet.PacketListener;
 import net.potatocloud.core.networking.packet.packets.service.StartServicePacket;
+import net.potatocloud.node.service.ServiceManagerImpl;
 
 @RequiredArgsConstructor
 public class StartServiceListener implements PacketListener<StartServicePacket> {
 
-    private final ServiceManager serviceManager;
+    private final ServiceManagerImpl serviceManager;
     private final ServiceGroupManager groupManager;
 
     @Override
@@ -20,6 +20,6 @@ public class StartServiceListener implements PacketListener<StartServicePacket> 
         if (group == null) {
             return;
         }
-        serviceManager.startService(group);
+        serviceManager.startServiceInternal(group.getName(), packet.getRequestId());
     }
 }

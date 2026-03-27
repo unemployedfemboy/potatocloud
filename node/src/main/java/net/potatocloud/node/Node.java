@@ -42,7 +42,6 @@ import net.potatocloud.node.version.UpdateChecker;
 import net.potatocloud.node.version.VersionFile;
 
 import java.nio.file.Path;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Getter

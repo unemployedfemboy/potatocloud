@@ -21,6 +21,7 @@ import net.potatocloud.node.utils.NetworkUtils;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -97,11 +98,10 @@ public class ServiceManagerImpl implements ServiceManager {
         ));
     }
 
-    @Override
-    public void startService(String groupName) {
+    public Service startServiceInternal(String groupName, String requestId) {
         final ServiceGroup group = groupManager.getServiceGroup(groupName);
         if (group == null) {
-            return;
+            return null;
         }
 
         final int serviceId = getFreeServiceId(group);
@@ -126,24 +126,32 @@ public class ServiceManagerImpl implements ServiceManager {
 
         services.add(service);
 
-        server.generateBroadcast().broadcast(new ServiceAddPacket(service.getName(),
+        server.generateBroadcast().broadcast(new ServiceAddPacket(
+                service.getName(),
                 service.getServiceId(),
                 service.getPort(),
                 service.getStartTimestamp(),
                 service.getGroup().getName(),
                 service.getPropertyMap(),
                 service.getStatus().name(),
-                service.getMaxPlayers())
-        );
+                service.getMaxPlayers(),
+                requestId
+        ));
 
         service.start();
+
+        return service;
     }
 
     @Override
-    public void startServices(String groupName, int amount) {
-        for (int i = 0; i < amount; i++) {
-            startService(groupName);
-        }
+    public void startService(String groupName) {
+        startServiceInternal(groupName, null);
+    }
+
+    @Override
+    public CompletableFuture<Service> startServiceAsync(String groupName) {
+        final Service service = startServiceInternal(groupName, null);
+        return CompletableFuture.completedFuture(service);
     }
 
     public void removeService(Service service) {

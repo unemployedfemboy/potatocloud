@@ -24,7 +24,8 @@ public class RequestServicesListener implements PacketListener<RequestServicesPa
                     service.getServiceGroup().getName(),
                     service.getPropertyMap(),
                     service.getStatus().name(),
-                    service.getMaxPlayers()
+                    service.getMaxPlayers(),
+                    null
             ));
         }
     }
