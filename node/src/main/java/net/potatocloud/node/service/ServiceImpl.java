@@ -280,60 +280,70 @@ public class ServiceImpl implements Service {
 
     @Override
     public void shutdown() {
-        if (status == ServiceStatus.STOPPED || status == ServiceStatus.STOPPING) {
-            return;
-        }
-        new Thread(this::shutdownBlocking, "Shutdown-" + getName()).start();
+        shutdownAsync();
     }
 
-    @SneakyThrows
+    public CompletableFuture<Void> shutdownAsync() {
+        return CompletableFuture.runAsync(this::shutdownBlocking, executorService);
+    }
+
     public void shutdownBlocking() {
         if (status == ServiceStatus.STOPPED || status == ServiceStatus.STOPPING) {
             return;
         }
 
-        logger.info("Service &a" + getName() + "&7 is now stopping&8...");
         status = ServiceStatus.STOPPING;
+
+        logger.info("Service &a" + getName() + "&7 is now stopping&8...");
+        eventManager.call(new ServiceStoppingEvent(getName()));
 
         if (processChecker != null) {
             processChecker.interrupt();
             processChecker = null;
         }
 
-        eventManager.call(new ServiceStoppingEvent(getName()));
-
         final Platform platform = platformManager.getPlatform(group.getPlatformName());
-        executeCommand(platform.isProxy() ? "end" : "stop");
 
-        if (outputReader != null) {
-            outputReader.interrupt();
-            outputReader = null;
-        }
+        try {
+            executeCommand(platform.isProxy() ? "end" : "stop");
 
-        if (processWriter != null) {
-            processWriter.close();
-            processWriter = null;
-        }
+            if (serverProcess != null) {
+                boolean exited = serverProcess.waitFor(config.getKillTimeout(), TimeUnit.SECONDS);
 
-        if (processReader != null) {
-            processReader.close();
-            processReader = null;
-        }
+                if (!exited) {
+                    logger.debug("Service &a" + getName() + " &7did not stop in time, destroying process&8...");
 
-        if (serverProcess != null) {
-            final boolean exited = serverProcess.waitFor(config.getKillTimeout(), TimeUnit.SECONDS);
-            if (!exited) {
-                serverProcess.destroyForcibly();
-                serverProcess.waitFor();
+                    serverProcess.destroy();
+
+                    if (!serverProcess.waitFor(2, TimeUnit.SECONDS)) {
+                        logger.debug("Service &a" + getName() + " &7still alive, forcing shutdown&8...");
+                        serverProcess.destroyForcibly();
+                        serverProcess.waitFor();
+                    }
+                }
             }
-            serverProcess = null;
+
+            if (processWriter != null) {
+                processWriter.close();
+                processWriter = null;
+            }
+
+            if (outputReader != null) {
+                outputReader.interrupt();
+                outputReader = null;
+            }
+
+            if (processReader != null) {
+                processReader.close();
+                processReader = null;
+            }
+
+        } catch (Exception e) {
+            logger.error("Failed to stop service &a" + getName() + "&8: &7" + e.getMessage());
         }
 
+        serverProcess = null;
         cleanup();
-    }
-
-    public CompletableFuture<Void> shutdownAsync() {
-        return CompletableFuture.runAsync(this::shutdownBlocking, executorService);
     }
 
     public void cleanup() {
@@ -354,7 +364,6 @@ public class ServiceImpl implements Service {
 
         if (server != null) {
             server.generateBroadcast().broadcast(new ServiceRemovePacket(this.getName(), this.getPort()));
-
             eventManager.call(new ServiceStoppedEvent(this.getName()));
         }
 
