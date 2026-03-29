@@ -16,17 +16,17 @@ import java.util.Map;
 @AllArgsConstructor
 public class GroupUpdatePacket implements Packet {
 
-    private String groupName;
-    private int minOnlineCount;
-    private int maxOnlineCount;
+    private String name;
+    private List<String> customJvmFlags;
     private int maxPlayers;
     private int maxMemory;
+    private int minOnlineCount;
+    private int maxOnlineCount;
     private boolean fallback;
     private int startPriority;
     private int startPercentage;
     private List<String> serviceTemplates;
     private Map<String, Property<?>> propertyMap;
-    private List<String> customJvmFlags;
 
     @Override
     public int getId() {
@@ -35,7 +35,8 @@ public class GroupUpdatePacket implements Packet {
 
     @Override
     public void write(PacketBuffer buf) {
-        buf.writeString(groupName);
+        buf.writeString(name);
+        buf.writeStringList(customJvmFlags);
         buf.writeInt(minOnlineCount);
         buf.writeInt(maxOnlineCount);
         buf.writeInt(maxPlayers);
@@ -45,12 +46,13 @@ public class GroupUpdatePacket implements Packet {
         buf.writeInt(startPercentage);
         buf.writeStringList(serviceTemplates);
         buf.writePropertyMap(propertyMap);
-        buf.writeStringList(customJvmFlags);
+
     }
 
     @Override
     public void read(PacketBuffer buf) {
-        groupName = buf.readString();
+        name = buf.readString();
+        customJvmFlags = buf.readStringList();
         minOnlineCount = buf.readInt();
         maxOnlineCount = buf.readInt();
         maxPlayers = buf.readInt();
@@ -60,6 +62,5 @@ public class GroupUpdatePacket implements Packet {
         startPercentage = buf.readInt();
         serviceTemplates = buf.readStringList();
         propertyMap = buf.readPropertyMap();
-        customJvmFlags = buf.readStringList();
     }
 }

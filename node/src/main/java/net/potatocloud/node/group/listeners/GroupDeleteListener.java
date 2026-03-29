@@ -16,7 +16,7 @@ public class GroupDeleteListener implements PacketListener<GroupDeletePacket> {
 
     @Override
     public void onPacket(NetworkConnection connection, GroupDeletePacket packet) {
-        final ServiceGroup group = groupManager.getServiceGroup(packet.getGroupName());
+        final ServiceGroup group = groupManager.getServiceGroup(packet.getName());
         if (group == null) {
             return;
         }

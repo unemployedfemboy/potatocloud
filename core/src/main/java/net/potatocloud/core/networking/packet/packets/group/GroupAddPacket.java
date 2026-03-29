@@ -19,17 +19,17 @@ public class GroupAddPacket implements Packet {
     private String name;
     private String platformName;
     private String platformVersionName;
-    private List<String> serviceTemplates;
-    private int minOnlineCount;
-    private int maxOnlineCount;
-    private int maxPlayers;
-    private int maxMemory;
-    private boolean fallback;
-    private boolean isStatic;
-    private int startPriority;
-    private int startPercentage;
     private String javaCommand;
     private List<String> customJvmFlags;
+    private int maxPlayers;
+    private int maxMemory;
+    private int minOnlineCount;
+    private int maxOnlineCount;
+    private boolean isStatic;
+    private boolean fallback;
+    private int startPriority;
+    private int startPercentage;
+    private List<String> serviceTemplates;
     private Map<String, Property<?>> propertyMap;
 
     @Override
@@ -42,17 +42,17 @@ public class GroupAddPacket implements Packet {
         buf.writeString(name);
         buf.writeString(platformName);
         buf.writeString(platformVersionName);
-        buf.writeStringList(serviceTemplates);
-        buf.writeInt(minOnlineCount);
-        buf.writeInt(maxOnlineCount);
-        buf.writeInt(maxPlayers);
-        buf.writeInt(maxMemory);
-        buf.writeBoolean(fallback);
-        buf.writeBoolean(isStatic);
-        buf.writeInt(startPriority);
-        buf.writeInt(startPercentage);
         buf.writeString(javaCommand);
         buf.writeStringList(customJvmFlags);
+        buf.writeInt(maxPlayers);
+        buf.writeInt(maxMemory);
+        buf.writeInt(minOnlineCount);
+        buf.writeInt(maxOnlineCount);
+        buf.writeBoolean(isStatic);
+        buf.writeBoolean(fallback);
+        buf.writeInt(startPriority);
+        buf.writeInt(startPercentage);
+        buf.writeStringList(serviceTemplates);
         buf.writePropertyMap(propertyMap);
     }
 
@@ -61,17 +61,17 @@ public class GroupAddPacket implements Packet {
         name = buf.readString();
         platformName = buf.readString();
         platformVersionName = buf.readString();
-        serviceTemplates = buf.readStringList();
-        minOnlineCount = buf.readInt();
-        maxOnlineCount = buf.readInt();
-        maxPlayers = buf.readInt();
-        maxMemory = buf.readInt();
-        fallback = buf.readBoolean();
-        isStatic = buf.readBoolean();
-        startPriority = buf.readInt();
-        startPercentage = buf.readInt();
         javaCommand = buf.readString();
         customJvmFlags = buf.readStringList();
+        maxPlayers = buf.readInt();
+        maxMemory = buf.readInt();
+        minOnlineCount = buf.readInt();
+        maxOnlineCount = buf.readInt();
+        isStatic = buf.readBoolean();
+        fallback = buf.readBoolean();
+        startPriority = buf.readInt();
+        startPercentage = buf.readInt();
+        serviceTemplates = buf.readStringList();
         propertyMap = buf.readPropertyMap();
     }
 }

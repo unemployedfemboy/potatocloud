@@ -20,51 +20,51 @@ public class ServiceGroupImpl implements ServiceGroup {
     private final String name;
     private final String platformName;
     private final String platformVersionName;
-    private final List<String> serviceTemplates;
-    private int minOnlineCount;
-    private int maxOnlineCount;
-    private int maxPlayers;
-    private int maxMemory;
-    private boolean fallback;
-    private boolean isStatic;
-    private int startPriority;
-    private int startPercentage;
     private String javaCommand;
     private List<String> customJvmFlags;
+    private int maxPlayers;
+    private int maxMemory;
+    private int minOnlineCount;
+    private int maxOnlineCount;
+    private boolean isStatic;
+    private boolean fallback;
+    private int startPriority;
+    private int startPercentage;
+    private final List<String> serviceTemplates;
     private final Map<String, Property<?>> propertyMap;
 
     public ServiceGroupImpl(
             String name,
             String platformName,
             String platformVersionName,
-            int minOnlineCount,
-            int maxOnlineCount,
-            int maxPlayers,
-            int maxMemory,
-            boolean fallback,
-            boolean isStatic,
-            int startPriority,
-            int startPercentage,
             String javaCommand,
             List<String> customJvmFlags,
+            int maxPlayers,
+            int maxMemory,
+            int minOnlineCount,
+            int maxOnlineCount,
+            boolean isStatic,
+            boolean fallback,
+            int startPriority,
+            int startPercentage,
             Map<String, Property<?>> propertyMap
     ) {
         this.name = name;
         this.platformName = platformName;
         this.platformVersionName = platformVersionName;
-        this.minOnlineCount = minOnlineCount;
-        this.maxOnlineCount = maxOnlineCount;
-        this.maxPlayers = maxPlayers;
-        this.maxMemory = maxMemory;
-        this.fallback = fallback;
-        this.isStatic = isStatic;
-        this.startPriority = startPriority;
-        this.startPercentage = startPercentage;
         this.javaCommand = javaCommand;
         this.customJvmFlags = customJvmFlags;
+        this.maxPlayers = maxPlayers;
+        this.maxMemory = maxMemory;
+        this.minOnlineCount = minOnlineCount;
+        this.maxOnlineCount = maxOnlineCount;
+        this.isStatic = isStatic;
+        this.fallback = fallback;
+        this.startPriority = startPriority;
+        this.startPercentage = startPercentage;
+        this.serviceTemplates = new ArrayList<>();
         this.propertyMap = propertyMap;
 
-        this.serviceTemplates = new ArrayList<>();
         addServiceTemplate("every");
         addServiceTemplate(name);
 

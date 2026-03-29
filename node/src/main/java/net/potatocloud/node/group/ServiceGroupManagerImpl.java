@@ -86,16 +86,16 @@ public class ServiceGroupManagerImpl implements ServiceGroupManager {
                 name,
                 platformName,
                 platformVersionName,
-                minOnlineCount,
-                maxOnlineCount,
-                maxPlayers,
-                maxMemory,
-                fallback,
-                isStatic,
-                startPriority,
-                startPercentage,
                 javaCommand,
                 customJvmFlags,
+                maxPlayers,
+                maxMemory,
+                minOnlineCount,
+                maxOnlineCount,
+                isStatic,
+                fallback,
+                startPriority,
+                startPercentage,
                 propertyMap
         );
 
@@ -106,17 +106,17 @@ public class ServiceGroupManagerImpl implements ServiceGroupManager {
                 name,
                 platformName,
                 platformVersionName,
-                group.getServiceTemplates(),
-                minOnlineCount,
-                maxOnlineCount,
-                maxPlayers,
-                maxMemory,
-                fallback,
-                isStatic,
-                startPriority,
-                startPercentage,
                 javaCommand,
                 customJvmFlags,
+                maxPlayers,
+                maxMemory,
+                minOnlineCount,
+                maxOnlineCount,
+                isStatic,
+                fallback,
+                startPriority,
+                startPercentage,
+                group.getServiceTemplates(),
                 propertyMap
         ));
 
@@ -162,16 +162,16 @@ public class ServiceGroupManagerImpl implements ServiceGroupManager {
 
         server.generateBroadcast().broadcast(new GroupUpdatePacket(
                 group.getName(),
-                group.getMinOnlineCount(),
-                group.getMaxOnlineCount(),
+                group.getCustomJvmFlags(),
                 group.getMaxPlayers(),
                 group.getMaxMemory(),
+                group.getMinOnlineCount(),
+                group.getMaxOnlineCount(),
                 group.isFallback(),
                 group.getStartPriority(),
                 group.getStartPercentage(),
                 group.getServiceTemplates(),
-                group.getPropertyMap(),
-                group.getCustomJvmFlags()
+                group.getPropertyMap()
         ));
     }
 

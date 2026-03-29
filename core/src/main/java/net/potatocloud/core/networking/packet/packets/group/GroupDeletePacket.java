@@ -12,7 +12,7 @@ import net.potatocloud.core.networking.packet.PacketIds;
 @AllArgsConstructor
 public class GroupDeletePacket implements Packet {
 
-    private String groupName;
+    private String name;
 
     @Override
     public int getId() {
@@ -21,11 +21,11 @@ public class GroupDeletePacket implements Packet {
 
     @Override
     public void write(PacketBuffer buf) {
-        buf.writeString(groupName);
+        buf.writeString(name);
     }
 
     @Override
     public void read(PacketBuffer buf) {
-        groupName = buf.readString();
+        name = buf.readString();
     }
 }

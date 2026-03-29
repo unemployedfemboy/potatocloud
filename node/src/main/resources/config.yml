@@ -6,7 +6,7 @@ console:
   enable-banner: true
 
   # Primary color code for console messages and prompt
-  # Supported colors: https://www.ditig.com/256-colors-cheat-sheet)
+  # Supported colors: https://www.ditig.com/256-colors-cheat-sheet
   primary-color: 42
 
   # Show player join and leave messages in the console
