@@ -7,7 +7,7 @@ import net.potatocloud.node.Node;
 
 import java.util.List;
 
-public class ProxyUtils {
+public final class ProxyUtils {
 
     private ProxyUtils() {
     }
