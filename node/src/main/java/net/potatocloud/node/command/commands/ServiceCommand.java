@@ -248,7 +248,7 @@ public class ServiceCommand extends Command {
                             return;
                         }
 
-                        screenManager.switchScreen(screen.getName());
+                        screenManager.switchTo(screen.name());
                     }
                 });
 

@@ -108,7 +108,7 @@ public class Logger {
 
         cachedLogs.add(coloredMessage);
 
-        final boolean isNodeScreen = Node.getInstance().getScreenManager().getCurrentScreen().getName().equals(Screen.NODE_SCREEN);
+        final boolean isNodeScreen = Node.getInstance().getScreenManager().getCurrentScreen().name().equals(Screen.NODE_SCREEN);
         if (!level.equals(Level.COMMAND) && isNodeScreen) {
             console.println(coloredMessage);
         }

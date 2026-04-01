@@ -61,7 +61,7 @@ public class NodeConfig {
         }
     }
 
-    public void loadKeys() {
+    public void load() {
         prompt = config.getString("console.prompt");
         enableBanner = config.getBoolean("console.enable-banner");
         primaryColorCode = config.getInt("console.primary-color");

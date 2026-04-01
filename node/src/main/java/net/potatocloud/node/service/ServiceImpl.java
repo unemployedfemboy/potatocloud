@@ -2,7 +2,6 @@ package net.potatocloud.node.service;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.SneakyThrows;
 import net.potatocloud.api.event.EventManager;
 import net.potatocloud.api.event.events.service.PreparedServiceStartingEvent;
 import net.potatocloud.api.event.events.service.ServiceStoppedEvent;
@@ -280,7 +279,7 @@ public class ServiceImpl implements Service {
         logs.add(log);
         screen.addLog(log);
 
-        if (screenManager.getCurrentScreen().getName().equals(getName())) {
+        if (screenManager.getCurrentScreen().name().equals(getName())) {
             console.println(log);
         }
     }
@@ -365,8 +364,8 @@ public class ServiceImpl implements Service {
 
         screenManager.removeScreen(screen);
 
-        if (screenManager.getCurrentScreen().getName().equals(getName())) {
-            screenManager.switchScreen(Screen.NODE_SCREEN);
+        if (screenManager.getCurrentScreen().name().equals(getName())) {
+            screenManager.switchTo(Screen.NODE_SCREEN);
         }
 
         if (server != null) {
