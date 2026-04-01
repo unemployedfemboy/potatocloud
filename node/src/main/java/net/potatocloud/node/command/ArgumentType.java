@@ -33,6 +33,10 @@ public abstract class ArgumentType<T> {
         return new StringArgument(name);
     }
 
+    public static ArgumentType<Boolean> Boolean(String name) {
+        return new BooleanArgument(name);
+    }
+
     public static ArgumentType<String> MultiString(String name) {
         return new MultiStringArgument(name);
     }
