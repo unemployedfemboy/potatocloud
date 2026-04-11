@@ -22,10 +22,6 @@ paper:
     - version: 1.21.6
     - version: 1.21.5
     - version: 1.21.4
-    - version: 1.21.3
-    - version: 1.20.6
-    - version: 1.20.5
-    - version: 1.20.4
 velocity:
   download: https://fill-data.papermc.io/v1/objects/{sha256}/velocity-{version}-{build}.jar
   base: velocity
@@ -66,10 +62,6 @@ purpur:
     - version: 1.21.6
     - version: 1.21.5
     - version: 1.21.4
-    - version: 1.21.3
-    - version: 1.20.6
-    - version: 1.20.5
-    - version: 1.20.4
 leaf:
   download: https://api.leafmc.one/v2/projects/leaf/versions/{version}/builds/{build}/downloads/leaf-{version}-{build}.jar
   base: paper
