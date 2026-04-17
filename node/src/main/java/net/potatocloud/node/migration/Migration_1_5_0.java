@@ -51,6 +51,10 @@ public class Migration_1_5_0 extends Migration {
             config.set("service.max-memory", 16384);
         }
 
+        if (!config.isSet("folders.modules")) {
+            config.set("folders.modules", "modules");
+        }
+
         config.save();
     }
 }

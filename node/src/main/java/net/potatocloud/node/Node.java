@@ -4,6 +4,7 @@ import lombok.Getter;
 import net.potatocloud.api.CloudAPI;
 import net.potatocloud.api.event.EventManager;
 import net.potatocloud.api.group.ServiceGroupManager;
+import net.potatocloud.api.logging.Logger;
 import net.potatocloud.api.player.CloudPlayerManager;
 import net.potatocloud.api.property.PropertyHolder;
 import net.potatocloud.api.utils.version.Version;
@@ -22,7 +23,7 @@ import net.potatocloud.node.group.ServiceGroupManagerImpl;
 import net.potatocloud.node.logging.NodeLogger;
 import net.potatocloud.node.migration.Migration_1_4_3;
 import net.potatocloud.node.migration.Migration_1_4_4;
-import net.potatocloud.node.migration.Migration_1_4_5;
+import net.potatocloud.node.migration.Migration_1_5_0;
 import net.potatocloud.node.module.ModuleLoader;
 import net.potatocloud.node.module.ModuleManager;
 import net.potatocloud.node.platform.DownloadManager;
@@ -136,7 +137,7 @@ public class Node extends CloudAPI {
         // TODO: Maybe move this somewhere else
         // Handle logs from Connector
         server.on(LogMessagePacket.class, (connection, packet) -> {
-            logger.log(net.potatocloud.api.logging.Logger.Level.valueOf(packet.getLevel()), packet.getMessage());
+            logger.log(Logger.Level.valueOf(packet.getLevel()), packet.getMessage());
         });
 
         eventManager = new ServerEventManager(server);
@@ -172,7 +173,7 @@ public class Node extends CloudAPI {
 
         moduleManager = new ModuleManager();
         moduleLoader = new ModuleLoader(moduleManager);
-        moduleLoader.load(Path.of("modules")); // TODO: Get folder from config
+        moduleLoader.load(Path.of(config.getModulesFolder()));
 
         if (!moduleManager.getModules().isEmpty()) {
             final int count = moduleManager.getModules().size();
@@ -199,7 +200,7 @@ public class Node extends CloudAPI {
     private void registerMigrations() {
         new Migration_1_4_3(Path.of(config.getConfig().getString("folders.groups")), migrationManager);
         new Migration_1_4_4(migrationManager);
-        new Migration_1_4_5(migrationManager);
+        new Migration_1_5_0(migrationManager);
     }
 
     private void registerCommands() {

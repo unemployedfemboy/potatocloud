@@ -35,6 +35,7 @@ public class NodeConfig {
     private String tempServicesFolder;
     private String templatesFolder;
     private String platformsFolder;
+    private String modulesFolder;
     private String logsFolder;
     private String dataFolder;
     private String backupsFolder;
@@ -84,6 +85,7 @@ public class NodeConfig {
         tempServicesFolder = config.getString("folders.temp-services");
         templatesFolder = config.getString("folders.templates");
         platformsFolder = config.getString("folders.platforms");
+        modulesFolder = config.getString("folders.modules");
         logsFolder = config.getString("folders.logs");
         dataFolder = config.getString("folders.data");
         backupsFolder = config.getString("folders.backups");

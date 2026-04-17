@@ -47,6 +47,7 @@ folders:
   temp-services: services/temp
   templates: templates
   platforms: platforms
+  modules: modules
   logs: logs
   data: data
 
