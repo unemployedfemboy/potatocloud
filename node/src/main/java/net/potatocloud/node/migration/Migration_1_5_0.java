@@ -10,12 +10,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class Migration_1_4_5 extends Migration {
+public class Migration_1_5_0 extends Migration {
 
     private final Path configFilePath = Path.of(NodeConfig.CONFIG_FILE_NAME);
 
-    public Migration_1_4_5(MigrationManager manager) {
-        super("Migration 1.4.5", Version.of(1, 4, 4), Version.of(1, 4, 5));
+    public Migration_1_5_0(MigrationManager manager) {
+        super("Migration 1.5.0", Version.of(1, 4, 4), Version.of(1, 5, 0));
 
         manager.registerMigration(this);
     }
@@ -26,7 +26,7 @@ public class Migration_1_4_5 extends Migration {
             backupConfigFile();
             migrateConfigFile();
         } catch (IOException e) {
-            System.err.println("Failed to migrate from version 1.4.4 to version 1.4.5");
+            System.err.println("Failed to migrate from version 1.4.4 to version 1.5.0");
         }
     }
 
